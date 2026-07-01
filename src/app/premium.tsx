@@ -16,7 +16,7 @@ import type { PurchasePackage } from '@/lib/purchases';
 // Apple, abonelik paywall'unda Kullanım Koşulları (EULA) + Gizlilik linki ZORUNLU kılar.
 const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 // GitHub Pages'te docs/privacy.html yayınlanınca aktif olur. GitHub kullanıcı adın farklıysa güncelle.
-const PRIVACY_URL = 'https://frozesoftware.github.io/frozfit/privacy.html';
+const PRIVACY_URL = 'https://frozene4715.github.io/frozfit/privacy.html';
 
 export default function PremiumScreen() {
   const theme = useTheme();
