@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Yardımcı fonksiyonlar
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+    // Kullanıcının kendi belgesinde isPremium'ı true yapmasını engeller
+    function notGrantingPremium() {
+      return !('isPremium' in request.resource.data)
+          || request.resource.data.isPremium == resource.data.get('isPremium', false);
+    }
+    // Kullanıcının kendi belgesinde aiCredits'i artırmasını engeller
+    function notIncreasingCredits() {
+      return !('aiCredits' in request.resource.data)
+          || request.resource.data.aiCredits <= resource.data.get('aiCredits', 5);
+    }
+    // İlk oluşturmada isPremium=false ve aiCredits<=5 zorunlu
+    function validNewUser() {
+      return (!('isPremium' in request.resource.data) || request.resource.data.isPremium == false)
+          && (!('aiCredits' in request.resource.data) || request.resource.data.aiCredits <= 5);
+    }
+
+    // ── Kullanıcı profili ──────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && validNewUser();
+      allow update: if isOwner(uid) && notGrantingPremium() && notIncreasingCredits();
+
+      // Günlük besin/kalori logları
+      match /days/{date} {
+        allow read, write: if isOwner(uid);
+      }
+      // Antrenman logları
+      match /workouts/{date} {
+        allow read, write: if isOwner(uid);
+      }
+      // Kilo logları
+      match /weights/{date} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ── Tarifler (AI oluşturulmuş, kişisel) ───────────────────────────
+    match /recipes/{recipeId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuth() && resource.data.uid == request.auth.uid;
+    }
+
+    // ── Topluluk tarifleri ─────────────────────────────────────────────
+    match /community_recipes/{id} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuth() && resource.data.uid == request.auth.uid;
+    }
+
+    // ── Yorumlar ──────────────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuth() && resource.data.uid == request.auth.uid;
+    }
+
+    // ── Liderlik tablosu ──────────────────────────────────────────────
+    match /leaderboard/{uid} {
+      allow read: if isAuth();
+      allow write: if isOwner(uid);
+    }
+
+    // ── Diğer her şeyi engelle ────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,23 +1,33 @@
 {
   "expo": {
-    "name": "frozfit",
+    "name": "FrozFit",
     "slug": "frozfit",
+    "description": "Kişiselleştirilmiş beslenme ve egzersiz takip uygulaması",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "frozfit",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.frozfit.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#31C964",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -28,17 +38,39 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#EAF9F0",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "FrozFit, besin barkodlarını taramak ve yemek fotoğrafı çekmek için kameranı kullanır.",
+          "microphonePermission": "FrozFit, kamera kullanımı sırasında mikrofona erişebilir."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FrozFit, yemek ve tarif fotoğrafı seçmek için fotoğraf kitaplığına erişir."
+        }
+      ],
+      "expo-notifications",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "05968d91-ed7c-45a0-95d0-2964885bc306"
+      }
+    },
+    "owner": "frozesoftware"
   }
 }

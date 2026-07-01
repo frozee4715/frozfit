@@ -1,14 +1,10 @@
 /**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
+ * Aktif tema renkleri. Tema modu (açık/koyu/sistem) ayarlardan gelir.
  */
-
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useResolvedScheme } from '@/lib/settings';
 
 export function useTheme() {
-  const scheme = useColorScheme();
-  const theme = scheme === 'unspecified' ? 'light' : scheme;
-
-  return Colors[theme];
+  const scheme = useResolvedScheme();
+  return Colors[scheme];
 }

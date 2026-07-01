@@ -1,6 +1,7 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * FrozFit tema sistemi.
+ * Tüm renkler hem açık (light) hem koyu (dark) mod için tanımlıdır.
+ * Marka: taze/sağlıklı hissi veren mint-yeşil + sıcak vurgu renkleri.
  */
 
 import '@/global.css';
@@ -9,18 +10,57 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    // Yüzeyler
+    background: '#F4F8F6', // ekran arka planı (yumuşak kırık beyaz-mint)
+    card: '#FFFFFF', // kart yüzeyi
+    backgroundElement: '#EAF1EE', // input / chip arka planı
+    backgroundSelected: '#D8E6E0', // seçili eleman
+    border: '#E3ECE7',
+
+    // Metin
+    text: '#0F1B15',
+    textSecondary: '#5C6B63',
+    textMuted: '#8A988F',
+
+    // Marka & vurgu
+    primary: '#12B886', // ana mint-yeşil
+    primaryDark: '#0E9E73',
+    primarySoft: '#E2F7EF', // açık mint zemin (primary üstüne metin)
+    accent: '#FF7A59', // sıcak mercan vurgusu
+
+    // Makro / kalori renkleri
+    calorie: '#FF7A59',
+    protein: '#4C8DFF',
+    carbs: '#F5A623',
+    fat: '#FF6B9D',
+
+    // Sekme çubuğu
+    tabActive: '#12B886',
+    tabInactive: '#9AA8A0',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    background: '#0E1512',
+    card: '#17211C',
+    backgroundElement: '#1E2A24',
+    backgroundSelected: '#2A3831',
+    border: '#24332C',
+
+    text: '#F1F5F3',
+    textSecondary: '#9DB0A6',
+    textMuted: '#6E7F76',
+
+    primary: '#2DD4A7',
+    primaryDark: '#1FB890',
+    primarySoft: '#15332A',
+    accent: '#FF8A6A',
+
+    calorie: '#FF8A6A',
+    protein: '#6BA3FF',
+    carbs: '#FBBF24',
+    fat: '#FF89B0',
+
+    tabActive: '#2DD4A7',
+    tabInactive: '#6B7C73',
   },
 } as const;
 
@@ -28,13 +68,9 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -59,6 +95,15 @@ export const Spacing = {
   four: 24,
   five: 32,
   six: 64,
+} as const;
+
+/** Köşe yuvarlaklığı ölçeği — modern, yumuşak kartlar için. */
+export const Radius = {
+  sm: 10,
+  md: 16,
+  lg: 22,
+  xl: 28,
+  pill: 999,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;

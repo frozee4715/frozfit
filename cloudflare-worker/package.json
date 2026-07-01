@@ -1,0 +1,14 @@
+{
+  "name": "frozfit-ai-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FrozFit AI proxy (Gemini + OpenRouter) on Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
