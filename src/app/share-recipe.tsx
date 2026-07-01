@@ -11,6 +11,7 @@ import { Field, NumberInput, TextArea, TextField, formStyles } from '@/component
 import { Screen } from '@/components/ui/screen';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAccountGate } from '@/lib/account-gate';
 import { useAuth } from '@/lib/auth-context';
 import { shareRecipe } from '@/lib/community';
 import { isUploadEnabled, uploadRecipeImage } from '@/lib/supabase-upload';
@@ -26,6 +27,7 @@ export default function ShareRecipeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { requireAccount } = useAccountGate();
   const { profile } = useUserProfile();
 
   const [title, setTitle] = useState('');
@@ -72,6 +74,7 @@ export default function ShareRecipeScreen() {
 
   const submit = async () => {
     if (!user || !valid) return;
+    if (!requireAccount()) return;
     setError(null);
     setBusy(true);
     try {

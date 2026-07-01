@@ -11,6 +11,7 @@ import { Screen } from '@/components/ui/screen';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { type AIContext, type FoodEstimate, analyzeFoodPhoto } from '@/lib/ai';
+import { useAccountGate } from '@/lib/account-gate';
 import { useAiAccess } from '@/lib/ai-credits';
 import { MEAL_TYPES, type MealType, useDailyLog } from '@/lib/daily-log';
 import { allergenLabel, goalLabel } from '@/lib/plan';
@@ -24,6 +25,7 @@ export default function PhotoMealScreen() {
   const { addMeal } = useDailyLog();
   const { profile } = useUserProfile();
   const access = useAiAccess();
+  const { requireAccount } = useAccountGate();
 
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,6 +59,7 @@ export default function PhotoMealScreen() {
 
   const pick = async (from: 'camera' | 'library') => {
     setError(null);
+    if (!requireAccount()) return;
     if (!access.consume()) {
       router.push('/get-credits' as Href);
       return;

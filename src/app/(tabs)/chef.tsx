@@ -11,6 +11,7 @@ import { aiSuggestedRecipes } from '@/constants/mock-data';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { type AIContext, type GeneratedRecipe, generateRecipe, isAIEnabled } from '@/lib/ai';
+import { useAccountGate } from '@/lib/account-gate';
 import { useAiAccess } from '@/lib/ai-credits';
 import { useAuth } from '@/lib/auth-context';
 import { shareRecipe } from '@/lib/community';
@@ -143,6 +144,7 @@ function AiGenerator() {
   const { user } = useAuth();
   const { addMeal } = useDailyLog();
   const access = useAiAccess();
+  const { requireAccount } = useAccountGate();
 
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading'>('idle');
@@ -165,6 +167,8 @@ function AiGenerator() {
 
   const generate = async () => {
     if (!input.trim() || status === 'loading') return;
+    // Hesap kapısı: misafirse önce hesap oluşturmaya yönlendir.
+    if (!requireAccount()) return;
     // Kredi kapısı: Pro değilse ve kredi yoksa kredi ekranına yönlendir.
     if (!access.consume()) {
       router.push('/get-credits' as Href);

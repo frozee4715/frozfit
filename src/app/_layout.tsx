@@ -11,7 +11,7 @@ import { AiCreditsProvider } from '@/lib/ai-credits';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { PremiumProvider } from '@/lib/premium';
 import { SettingsProvider, useResolvedScheme } from '@/lib/settings';
-import { isGuestExpired, useUserProfile } from '@/lib/user-profile';
+import { useUserProfile } from '@/lib/user-profile';
 
 export default function RootLayout() {
   return (
@@ -68,16 +68,13 @@ function RootNavigator() {
 
     const onLogin = pathname.startsWith('/login');
     const onOnboarding = pathname.startsWith('/onboarding');
-    const guestExpired = isGuestExpired(profile);
 
     if (!user) {
       if (!onLogin) router.replace('/login');
       return;
     }
-    if (guestExpired) {
-      if (!onLogin) router.replace('/login');
-      return;
-    }
+    // Misafirler artık ani şekilde kilitlenmez ("değer-önce" strateji); bunun
+    // yerine kalıcı aksiyonlar useAccountGate ile hesap oluşturmaya yönlendirir.
     if (!profile?.onboardedAt) {
       if (!onOnboarding) router.replace('/onboarding');
       return;

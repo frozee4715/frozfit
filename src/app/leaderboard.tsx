@@ -31,6 +31,8 @@ export default function LeaderboardScreen() {
   // Bu ekran açıldığında kullanıcının güncel skorunu tabloya yaz.
   useEffect(() => {
     if (!user || !profile) return;
+    // Misafirler liderlik tablosuna yazılmaz; sadece görüntüler.
+    if (user.isAnonymous) return;
     const week = thisWeekKeys();
     const weekLoggedDays = days.filter((d) => week.has(d.date) && d.mealCount > 0).length;
     const weeklyWorkouts = workoutDays.filter((d) => week.has(d.date) && d.count > 0).length;

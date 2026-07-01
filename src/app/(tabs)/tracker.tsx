@@ -25,6 +25,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { type AIContext, type MealIdea, isAIEnabled, suggestWhatToEat } from '@/lib/ai';
 import { MEAL_TYPES, type LoggedMeal, type MealType, dateKey, useDailyLog } from '@/lib/daily-log';
 import { allergenLabel, caloriesPerMeal, goalLabel } from '@/lib/plan';
+import { useAccountGate } from '@/lib/account-gate';
 import { useAiAccess } from '@/lib/ai-credits';
 import { useTrackingHistory } from '@/lib/tracking-history';
 import { useUserProfile } from '@/lib/user-profile';
@@ -55,6 +56,7 @@ export default function TrackerScreen() {
   const { streak } = useTrackingHistory();
   const workout = useWorkoutLog();
   const access = useAiAccess();
+  const { requireAccount } = useAccountGate();
   const yesterday = useDailyLog(yesterdayKey());
 
   const [modalType, setModalType] = useState<MealType | null>(null);
@@ -63,6 +65,7 @@ export default function TrackerScreen() {
   // "Dünü kopyala": bugün boşsa ve dün öğün varsa göster.
   const canCopyYesterday = log.meals.length === 0 && yesterday.log.meals.length > 0;
   const copyYesterday = () => {
+    if (!requireAccount()) return;
     yesterday.log.meals.forEach(({ id, ...meal }) => addMeal(meal));
   };
 
@@ -123,6 +126,7 @@ export default function TrackerScreen() {
       {isAIEnabled() && (
         <Pressable
           onPress={() => {
+            if (!requireAccount()) return;
             if (!access.consume()) {
               router.push('/get-credits' as Href);
               return;
@@ -174,7 +178,10 @@ export default function TrackerScreen() {
             <Pressable
               key={i}
               // Dolu son bardağa basınca onu boşalt (toggle), aksi halde o seviyeye doldur.
-              onPress={() => setWater(i + 1 === log.water ? i : i + 1)}
+              onPress={() => {
+                if (!requireAccount()) return;
+                setWater(i + 1 === log.water ? i : i + 1);
+              }}
               style={{ flex: 1 }}>
               <View
                 style={[
@@ -247,7 +254,10 @@ export default function TrackerScreen() {
                   </View>
                 </View>
                 <Pressable
-                  onPress={() => setModalType(section.value)}
+                  onPress={() => {
+                    if (!requireAccount()) return;
+                    setModalType(section.value);
+                  }}
                   style={[styles.addBtn, { backgroundColor: theme.primary }]}>
                   <Ionicons name="add" size={20} color="#fff" />
                 </Pressable>

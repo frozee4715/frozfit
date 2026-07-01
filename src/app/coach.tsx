@@ -17,6 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { type AIContext, type ChatMessage, chefChat, isAIEnabled } from '@/lib/ai';
+import { useAccountGate } from '@/lib/account-gate';
 import { useAiAccess } from '@/lib/ai-credits';
 import { allergenLabel, caloriesPerMeal, goalLabel } from '@/lib/plan';
 import { useUserProfile } from '@/lib/user-profile';
@@ -35,6 +36,7 @@ export default function CoachScreen() {
   const insets = useSafeAreaInsets();
   const { profile } = useUserProfile();
   const access = useAiAccess();
+  const { requireAccount } = useAccountGate();
   const scrollRef = useRef<ScrollView>(null);
   const charged = useRef(false); // oturum başına 1 kredi
 
@@ -58,6 +60,7 @@ export default function CoachScreen() {
   const send = async (text: string) => {
     const content = text.trim();
     if (!content || busy) return;
+    if (!requireAccount()) return;
     // Kredi kapısı: bu sohbet oturumunda bir kez ücretlendir.
     if (!charged.current) {
       if (!access.consume()) {

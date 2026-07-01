@@ -15,6 +15,7 @@ import { MEAL_TYPES, type MealType, useDailyLog } from '@/lib/daily-log';
 import { useRecipes } from '@/lib/recipes';
 import { submitReview, useReviews } from '@/lib/reviews';
 import { toggleFavorite, toggleFollow, useUserProfile } from '@/lib/user-profile';
+import { useAccountGate } from '@/lib/account-gate';
 
 /** Saate göre varsayılan öğün tipi. */
 function defaultMealType(): MealType {
@@ -35,11 +36,13 @@ export default function RecipeDetailScreen() {
   const { addMeal } = useDailyLog();
   const { user } = useAuth();
   const { profile } = useUserProfile();
+  const { requireAccount } = useAccountGate();
 
   // Hem standart hem topluluk tarifleri arasında ara.
   const recipe = recipes.find((r) => r.id === id) ?? communityRecipes.find((r) => r.id === id);
   const isFavorite = Boolean(id && profile?.favorites?.includes(id));
   const onToggleFavorite = () => {
+    if (!requireAccount()) return;
     if (user && id) toggleFavorite(user.uid, id, !isFavorite).catch(() => {});
   };
   const [mealType, setMealType] = useState<MealType>(defaultMealType());
@@ -102,6 +105,7 @@ export default function RecipeDetailScreen() {
   const PORTIONS = [0.5, 1, 1.5, 2];
 
   const handleAdd = () => {
+    if (!requireAccount()) return;
     addMeal({
       name: recipe.title,
       mealType,
@@ -195,7 +199,10 @@ export default function RecipeDetailScreen() {
           {recipe.authorUid && user && (
             <View style={{ flexDirection: 'row', gap: Spacing.two }}>
               <Pressable
-                onPress={() => toggleLike(recipe.id, user.uid, !(recipe.likedBy ?? []).includes(user.uid)).catch(() => {})}
+                onPress={() => {
+                  if (!requireAccount()) return;
+                  toggleLike(recipe.id, user.uid, !(recipe.likedBy ?? []).includes(user.uid)).catch(() => {});
+                }}
                 style={[styles.socialBtn, { backgroundColor: theme.backgroundElement }]}>
                 <Ionicons
                   name={(recipe.likedBy ?? []).includes(user.uid) ? 'heart' : 'heart-outline'}
@@ -208,9 +215,10 @@ export default function RecipeDetailScreen() {
               </Pressable>
               {recipe.authorUid !== user.uid && (
                 <Pressable
-                  onPress={() =>
-                    toggleFollow(user.uid, recipe.authorUid!, !(profile?.following ?? []).includes(recipe.authorUid!)).catch(() => {})
-                  }
+                  onPress={() => {
+                    if (!requireAccount()) return;
+                    toggleFollow(user.uid, recipe.authorUid!, !(profile?.following ?? []).includes(recipe.authorUid!)).catch(() => {});
+                  }}
                   style={[
                     styles.socialBtn,
                     (profile?.following ?? []).includes(recipe.authorUid)

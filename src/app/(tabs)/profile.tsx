@@ -15,7 +15,8 @@ import { useT } from '@/lib/i18n';
 import { goalLabel } from '@/lib/plan';
 import { usePremium } from '@/lib/premium';
 import { type WeightUnit, fromDisplayWeight, toDisplayWeight, useSettings, weightLabel } from '@/lib/settings';
-import { guestDaysLeft, useUserProfile } from '@/lib/user-profile';
+import { useUserProfile } from '@/lib/user-profile';
+import { useAccountGate } from '@/lib/account-gate';
 import { logWeight, useWeightLog } from '@/lib/weight-log';
 
 type SettingItem = { icon: any; labelKey: string; route?: Href };
@@ -96,7 +97,7 @@ export default function ProfileScreen() {
   });
 
   const isGuest = profile?.isGuest;
-  const daysLeft = isGuest ? Math.max(0, guestDaysLeft(profile)) : 0;
+  const { requireAccount } = useAccountGate();
 
   const saveWeight = async (kg: number) => {
     setWeightModal(false);
@@ -136,13 +137,13 @@ export default function ProfileScreen() {
       {/* Misafir bilgisi */}
       {isGuest && (
         <Card style={styles.guestCard}>
-          <Ionicons name="time-outline" size={20} color={theme.primaryDark} />
+          <Ionicons name="person-add-outline" size={20} color={theme.primaryDark} />
           <View style={{ flex: 1 }}>
             <ThemedText type="smallBold" style={{ fontSize: 14 }}>
-              Misafir hesabı · {daysLeft} gün kaldı
+              Misafir olarak geziyorsun
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>
-              Verilerini kalıcı tutmak için hesap oluştur.
+              Öğün, kilo ve antrenman kaydetmek + verilerini güvende tutmak için ücretsiz hesap oluştur.
             </ThemedText>
           </View>
           <Pressable
@@ -234,7 +235,10 @@ export default function ProfileScreen() {
             Kilo değişimi
           </ThemedText>
           <Pressable
-            onPress={() => setWeightModal(true)}
+            onPress={() => {
+              if (!requireAccount()) return;
+              setWeightModal(true);
+            }}
             style={[styles.weightAddBtn, { backgroundColor: theme.primarySoft }]}>
             <Ionicons name="add" size={16} color={theme.primaryDark} />
             <ThemedText type="smallBold" style={{ color: theme.primaryDark, fontSize: 13 }}>

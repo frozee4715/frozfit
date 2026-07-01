@@ -32,6 +32,7 @@ import {
   estimateBurn,
   useWorkoutLog,
 } from '@/lib/workout-log';
+import { useAccountGate } from '@/lib/account-gate';
 
 export default function WorkoutScreen() {
   const theme = useTheme();
@@ -41,6 +42,7 @@ export default function WorkoutScreen() {
   const { latest } = useWeightLog();
   const { log, totals, addExercise, removeExercise } = useWorkoutLog();
   const { totals: foodTotals } = useDailyLog();
+  const { requireAccount } = useAccountGate();
 
   const [picker, setPicker] = useState(false);
 
@@ -121,7 +123,10 @@ export default function WorkoutScreen() {
 
         {/* Egzersiz ekle butonu */}
         <Pressable
-          onPress={() => setPicker(true)}
+          onPress={() => {
+            if (!requireAccount()) return;
+            setPicker(true);
+          }}
           style={[styles.addBtn, { backgroundColor: theme.primary }]}>
           <Ionicons name="add" size={22} color="#fff" />
           <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 16 }}>

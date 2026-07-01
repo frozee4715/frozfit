@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAccountGate } from '@/lib/account-gate';
 import { type MealType, useDailyLog } from '@/lib/daily-log';
 import { type FoodProduct, lookupBarcode } from '@/lib/food-search';
 
@@ -18,6 +19,7 @@ export default function ScanScreen() {
   const { meal } = useLocalSearchParams<{ meal?: string }>();
   const mealType = (meal as MealType) || 'snack';
   const { addMeal } = useDailyLog();
+  const { requireAccount } = useAccountGate();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(true);
@@ -60,6 +62,7 @@ export default function ScanScreen() {
 
   const add = () => {
     if (!product || !scaled) return;
+    if (!requireAccount()) return;
     addMeal({
       name: product.brand ? `${product.name} (${product.brand})` : product.name,
       mealType,
