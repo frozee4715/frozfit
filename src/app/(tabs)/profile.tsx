@@ -53,6 +53,7 @@ const SETTING_SECTIONS: { titleKey: string; items: SettingItem[] }[] = [
       { icon: 'settings-outline', labelKey: 'profile.settings', route: '/settings' as Href },
       { icon: 'notifications-outline', labelKey: 'profile.notifications', route: '/reminders' as Href },
       { icon: 'shield-checkmark-outline', labelKey: 'profile.privacy', route: '/privacy' as Href },
+      { icon: 'ban-outline', labelKey: 'profile.blocked', route: '/blocked-users' as Href },
       { icon: 'help-circle-outline', labelKey: 'profile.help', route: '/help' as Href },
     ],
   },

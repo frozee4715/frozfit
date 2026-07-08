@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { toggleLike, useCommunityRecipes } from '@/lib/community';
 import { MEAL_TYPES, type MealType, useDailyLog } from '@/lib/daily-log';
+import { promptBlock, promptReport } from '@/lib/moderation';
 import { useRecipes } from '@/lib/recipes';
 import { submitReview, useReviews } from '@/lib/reviews';
 import { toggleFavorite, toggleFollow, useUserProfile } from '@/lib/user-profile';
@@ -51,6 +52,9 @@ export default function RecipeDetailScreen() {
 
   // Değerlendirmeler
   const { reviews, average, count } = useReviews(id);
+  const blocked = profile?.blockedUsers ?? [];
+  // Engellenen kullanıcıların yorumlarını gizle (kendi yorumun her zaman görünür).
+  const visibleReviews = reviews.filter((r) => r.uid === user?.uid || !blocked.includes(r.uid));
   const myReview = reviews.find((r) => r.uid === user?.uid);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
@@ -240,6 +244,47 @@ export default function RecipeDetailScreen() {
             </View>
           )}
 
+          {/* Moderasyon: bildir / engelle (topluluk tarifleri, başkasının içeriği) */}
+          {recipe.authorUid && user && recipe.authorUid !== user.uid && (
+            <View style={styles.moderationRow}>
+              <Pressable
+                onPress={() =>
+                  promptReport({
+                    targetType: 'recipe',
+                    targetId: recipe.id,
+                    targetUid: recipe.authorUid,
+                    reporterUid: user.uid,
+                  })
+                }
+                style={styles.moderationBtn}
+                hitSlop={6}>
+                <Ionicons name="flag-outline" size={15} color={theme.textMuted} />
+                <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 13 }}>
+                  Bildir
+                </ThemedText>
+              </Pressable>
+              <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 13 }}>
+                ·
+              </ThemedText>
+              <Pressable
+                onPress={() =>
+                  promptBlock({
+                    uid: user.uid,
+                    targetUid: recipe.authorUid!,
+                    targetName: recipe.authorName,
+                    onDone: () => router.back(),
+                  })
+                }
+                style={styles.moderationBtn}
+                hitSlop={6}>
+                <Ionicons name="ban-outline" size={15} color={theme.textMuted} />
+                <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 13 }}>
+                  Kullanıcıyı engelle
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+
           {/* Makro grid */}
           <View style={styles.macroGrid}>
             {macros.map((m) => (
@@ -402,18 +447,34 @@ export default function RecipeDetailScreen() {
             )}
 
             {/* Diğer değerlendirmeler */}
-            {reviews.filter((r) => r.uid !== user?.uid).length === 0 && !myReview ? (
+            {visibleReviews.filter((r) => r.uid !== user?.uid).length === 0 && !myReview ? (
               <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 13 }}>
                 Henüz değerlendirme yok. İlk yorumu sen yap!
               </ThemedText>
             ) : (
-              reviews.map((r) => (
+              visibleReviews.map((r) => (
                 <View key={r.id} style={[styles.reviewItem, { borderTopColor: theme.border }]}>
                   <View style={styles.reviewItemHead}>
                     <ThemedText type="smallBold" style={{ fontSize: 14 }}>
                       {r.uid === user?.uid ? 'Sen' : r.authorName}
                     </ThemedText>
-                    <Stars rating={r.rating} size={13} />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                      <Stars rating={r.rating} size={13} />
+                      {user && r.uid !== user.uid && (
+                        <Pressable
+                          onPress={() =>
+                            promptReport({
+                              targetType: 'review',
+                              targetId: r.id,
+                              targetUid: r.uid,
+                              reporterUid: user.uid,
+                            })
+                          }
+                          hitSlop={8}>
+                          <Ionicons name="flag-outline" size={14} color={theme.textMuted} />
+                        </Pressable>
+                      )}
+                    </View>
                   </View>
                   {r.text.length > 0 && (
                     <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 14, lineHeight: 20 }}>
@@ -512,6 +573,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
+  },
+  moderationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  moderationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.one,
   },
   macroGrid: {
     flexDirection: 'row',

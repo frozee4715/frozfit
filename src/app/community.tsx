@@ -23,10 +23,13 @@ export default function CommunityScreen() {
   const [filter, setFilter] = useState<Filter>('all');
 
   const following = profile?.following ?? [];
+  const blocked = profile?.blockedUsers ?? [];
+  // Engellenen kullanıcıların tarifleri hiçbir sekmede gösterilmez.
+  const notBlocked = recipes.filter((r) => !r.authorUid || !blocked.includes(r.authorUid));
   const visible =
     filter === 'following'
-      ? recipes.filter((r) => r.authorUid && following.includes(r.authorUid))
-      : recipes;
+      ? notBlocked.filter((r) => r.authorUid && following.includes(r.authorUid))
+      : notBlocked;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>

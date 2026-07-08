@@ -145,6 +145,7 @@ function RootNavigator() {
         <Stack.Screen name="coach" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="privacy" />
+        <Stack.Screen name="blocked-users" />
         <Stack.Screen name="help" />
         <Stack.Screen name="upgrade" />
         <Stack.Screen name="meal-plan" />

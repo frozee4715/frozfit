@@ -201,6 +201,14 @@ export default function ShareRecipeScreen() {
           </ThemedText>
         )}
 
+        <View style={[styles.policyNote, { backgroundColor: theme.backgroundElement }]}>
+          <Ionicons name="shield-checkmark-outline" size={16} color={theme.textSecondary} />
+          <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1, fontSize: 12, lineHeight: 17 }}>
+            Paylaşarak uygunsuz, rahatsız edici veya yasa dışı içerik yayınlamayacağını
+            kabul edersin. Bu tür içerikler kaldırılır ve hesabın askıya alınabilir.
+          </ThemedText>
+        </View>
+
         <Pressable
           onPress={submit}
           disabled={!valid || busy}
@@ -232,6 +240,13 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  policyNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Radius.md,
   },
   photoBtn: {
     flex: 1,

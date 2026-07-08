@@ -36,6 +36,8 @@ export type UserProfile = PlanInput &
     favorites: string[];
     /** Takip edilen kullanıcı uid'leri. */
     following: string[];
+    /** Engellenen kullanıcı uid'leri — içerikleri toplulukta gizlenir. */
+    blockedUsers: string[];
   };
 
 const USERS = 'users';
@@ -62,6 +64,7 @@ function toProfile(data: Record<string, any>): UserProfile {
     guestStartedAt: data.guestStartedAt ?? null,
     favorites: Array.isArray(data.favorites) ? data.favorites : [],
     following: Array.isArray(data.following) ? data.following : [],
+    blockedUsers: Array.isArray(data.blockedUsers) ? data.blockedUsers : [],
   };
 }
 
@@ -178,6 +181,19 @@ export async function toggleFollow(uid: string, targetUid: string, follow: boole
   await setDoc(
     doc(db, USERS, uid),
     { following: follow ? arrayUnion(targetUid) : arrayRemove(targetUid), updatedAt: serverTimestamp() },
+    { merge: true },
+  );
+}
+
+/**
+ * Bir kullanıcıyı engeller/engeli kaldırır. Engellenen kişinin topluluk
+ * içerikleri (tarif/yorum) bu kullanıcıya gösterilmez. (App Store Guideline 1.2)
+ */
+export async function toggleBlock(uid: string, targetUid: string, block: boolean): Promise<void> {
+  if (!db || uid === targetUid) return;
+  await setDoc(
+    doc(db, USERS, uid),
+    { blockedUsers: block ? arrayUnion(targetUid) : arrayRemove(targetUid), updatedAt: serverTimestamp() },
     { merge: true },
   );
 }

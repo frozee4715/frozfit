@@ -217,16 +217,16 @@ Dürüst cevaplar (çoğu "None/No"):
 
 ## 7) ⚠️ Yayın Öncesi Reddi Önleyecek Kritik Kontroller
 
-Bunlar App Store review'da **en sık ret sebepleri** — göndermeden önce hallet:
+Bunlar App Store review'da **en sık ret sebepleri**:
 
-1. **UGC moderasyonu (Guideline 1.2) — EN YÜKSEK RİSK.**
-   Topluluk tarifleri ve AI sohbeti kullanıcı içeriği. Apple şunları ister:
-   - Uygunsuz içeriği **bildir (report)** mekanizması
-   - Küfürlü/istismarcı kullanıcıyı **engelle (block)**
-   - İçerik filtreleme + zamanında müdahale taahhüdü
-   Şu an uygulamada bunlar **yoksa**, review'dan dönme ihtimali yüksek. → *Bunu koda eklememi ister misin? (rapor et + engelle butonları + kullanıcı bildirimi). 1-2 saatlik iş, reddi önler.*
+1. **UGC moderasyonu (Guideline 1.2) — ✅ ÇÖZÜLDÜ (2026-07-09).**
+   Eklendi: tarif/yorum için **"Bildir"** (native sebep seçimi → `reports` koleksiyonu), yazarı **"Engelle"** (engellenenin tarif+yorumları gizlenir), profil → **"Engellenen kullanıcılar"** ekranından engel kaldırma, tarif paylaşımında **içerik kuralı onay notu**. Firestore `reports` kuralı **deploy edildi** (canlı). ⚠️ **Bu özellikler build 33'TE YOK** — yeni bir build (34) alıp submit etmelisin (bkz. §9).
 
-2. **App Review demo hesabı.** Uygulama girişi zorunlu → ASC "App Review Information" bölümüne bir **test hesabı** (e-posta + şifre) gir, yoksa reviewer içeri giremez → ret. Google/Apple ile giriş de olduğundan, hazır bir e-posta/şifre hesabı oluştur ve oraya yaz.
+2. **App Review demo hesabı — ✅ HAZIR (2026-07-09).**
+   Önceden doğrulanmış demo hesabı oluşturuldu (`scripts/create-review-account.js`). ASC → **App Review Information → Sign-In Required** bölümüne gir:
+   - **E-posta:** `review@frozfit.app`
+   - **Şifre:** `FrozFit!Review2026`
+   Hesap `emailVerified: true` olduğu için doğrulama duvarına takılmaz. (Şifreyi değiştirmek istersen scripti `REVIEW_PASSWORD='...'` ile tekrar çalıştır.)
 
 3. **Sign in with Apple.** Google girişi sunuyorsan Apple girişi de sunmak zorunlusun (var ✓). Kontrol et: gerçekten çalışıyor (son build'de nonce kaldırıldı, TestFlight'ta doğrula).
 
@@ -240,15 +240,31 @@ Bunlar App Store review'da **en sık ret sebepleri** — göndermeden önce hall
 
 ## 8) Gönderme Adımları (özet)
 
-1. App Information + Kategoriler + Privacy/Support URL → gir
-2. Açıklama, keywords, promotional, what's new (§2/§3) → gir
-3. Screenshots (§6) → yükle
-4. Build seç → **build 33** (v1.0.0) TestFlight'ta işlendiyse "Build" bölümünden seç
-5. App Privacy (§4) → doldur
-6. Age Rating (§5) → doldur
-7. App Review Information → **demo hesabı** + iletişim bilgisi (§7.2)
-8. Pricing → Free (Pro IAP ayrı)
-9. **Submit for Review**
+1. **Önce yeni build al (§9)** — moderasyon özellikleri build 33'te yok
+2. App Information + Kategoriler + Privacy/Support URL → gir
+3. Açıklama, keywords, promotional, what's new (§2/§3) → gir
+4. Screenshots (§6) → yükle
+5. Build seç → **build 34** (yeni, moderasyonlu) işlendiğinde "Build" bölümünden seç
+6. App Privacy (§4) → doldur
+7. Age Rating (§5) → doldur
+8. App Review Information → **demo hesabı** `review@frozfit.app` / `FrozFit!Review2026` + iletişim bilgisi
+9. Pricing → Free (Pro IAP ayrı)
+10. **Submit for Review**
+
+---
+
+## 9) Yeni build (build 34) — moderasyon özellikleri için ZORUNLU
+
+Rapor/engelle özellikleri koda eklendi ama TestFlight'taki build 33'te **yok**. Reviewer'ın görmesi için yeni build şart:
+
+```bash
+cd frozfit
+npx eas build --platform ios --profile production --auto-submit --non-interactive
+```
+
+Bu buildNumber'ı 34'e çıkarır (autoIncrement), TestFlight'a işler ve auto-submit ile App Store Connect'e gönderir. İşlendikten sonra yukarıdaki §8 adımlarıyla submit et.
+
+> Firestore `reports` kuralı zaten deploy edildi — build ile ayrıca yapman gereken bir şey yok.
 
 ---
 
