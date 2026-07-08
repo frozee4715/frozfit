@@ -3,7 +3,7 @@
  * Kart ve butonlara modern, "canlı" bir his katar.
  */
 import { type ReactNode } from 'react';
-import { Pressable, type PressableProps, type ViewStyle } from 'react-native';
+import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -14,7 +14,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Props = PressableProps & {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   /** En küçülme oranı (varsayılan 0.97). */
   activeScale?: number;
 };

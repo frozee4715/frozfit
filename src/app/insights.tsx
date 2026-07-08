@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { WeeklyProgressChart } from '@/components/ui/weekly-progress-chart';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { dateKey } from '@/lib/daily-log';
+import { usePremium } from '@/lib/premium';
 import { useTrackingHistory } from '@/lib/tracking-history';
 import { useUserProfile } from '@/lib/user-profile';
 
@@ -32,6 +33,7 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const { days } = useTrackingHistory();
   const { profile } = useUserProfile();
+  const { isPremium } = usePremium();
 
   const byDate = useMemo(() => {
     const m = new Map(days.map((d) => [d.date, d]));
@@ -116,38 +118,66 @@ export default function InsightsScreen() {
           </View>
         </Card>
 
-        {/* Makro dağılımı */}
-        <Card style={{ gap: Spacing.three }}>
-          <ThemedText type="smallBold" style={{ fontSize: 15 }}>
-            Ortalama makro dağılımı
-          </ThemedText>
-          {macroSplit.map((m) => (
-            <View key={m.label} style={{ gap: Spacing.one }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <ThemedText type="small">{m.label}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  %{m.pct}
+        {isPremium ? (
+          <>
+            {/* Makro dağılımı (Premium) */}
+            <Card style={{ gap: Spacing.three }}>
+              <ThemedText type="smallBold" style={{ fontSize: 15 }}>
+                Ortalama makro dağılımı
+              </ThemedText>
+              {macroSplit.map((m) => (
+                <View key={m.label} style={{ gap: Spacing.one }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <ThemedText type="small">{m.label}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      %{m.pct}
+                    </ThemedText>
+                  </View>
+                  <ProgressBar progress={m.pct / 100} color={m.color} />
+                </View>
+              ))}
+            </Card>
+
+            {/* Aylık özet (Premium) */}
+            <Card style={styles.monthRow}>
+              <View style={[styles.monthIcon, { backgroundColor: theme.primarySoft }]}>
+                <Ionicons name="calendar-outline" size={22} color={theme.primaryDark} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <ThemedText type="subtitle" style={{ fontSize: 20 }}>
+                  {month}/30 gün
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 13 }}>
+                  Son 30 günde takip yaptığın günler
                 </ThemedText>
               </View>
-              <ProgressBar progress={m.pct / 100} color={m.color} />
-            </View>
-          ))}
-        </Card>
-
-        {/* Aylık özet */}
-        <Card style={styles.monthRow}>
-          <View style={[styles.monthIcon, { backgroundColor: theme.primarySoft }]}>
-            <Ionicons name="calendar-outline" size={22} color={theme.primaryDark} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <ThemedText type="subtitle" style={{ fontSize: 20 }}>
-              {month}/30 gün
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 13 }}>
-              Son 30 günde takip yaptığın günler
-            </ThemedText>
-          </View>
-        </Card>
+            </Card>
+          </>
+        ) : (
+          /* Gelişmiş analizler kilidi — Premium CTA */
+          <Pressable onPress={() => router.push('/premium' as Href)}>
+            <Card style={{ gap: Spacing.two, alignItems: 'center', paddingVertical: Spacing.four }}>
+              <View style={[styles.monthIcon, { backgroundColor: theme.primarySoft }]}>
+                <Ionicons name="lock-closed" size={22} color={theme.primaryDark} />
+              </View>
+              <ThemedText type="smallBold" style={{ fontSize: 15, textAlign: 'center' }}>
+                Gelişmiş analizler Premium ile açılır
+              </ThemedText>
+              <ThemedText
+                type="small"
+                themeColor="textSecondary"
+                style={{ fontSize: 13, textAlign: 'center' }}>
+                Makro dağılımı, 30 günlük trendler ve detaylı içgörüler için Premium&apos;a geç.
+              </ThemedText>
+              <View style={[styles.upgradeBtn, { backgroundColor: theme.primary }]}>
+                <Ionicons name="star" size={14} color="#fff" />
+                <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 13 }}>
+                  Premium&apos;u incele
+                </ThemedText>
+              </View>
+            </Card>
+          </Pressable>
+        )}
 
         {loggedWeek.length === 0 && (
           <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 13, textAlign: 'center' }}>
@@ -197,5 +227,14 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  upgradeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    height: 36,
+    borderRadius: Radius.pill,
+    marginTop: Spacing.one,
   },
 });

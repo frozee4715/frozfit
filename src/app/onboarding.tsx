@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { type Href, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,6 +60,7 @@ const TOTAL_STEPS = STEP_META.length;
 export default function OnboardingScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user } = useAuth();
 
   const [step, setStep] = useState(0);
@@ -180,7 +182,18 @@ export default function OnboardingScreen() {
           <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 13 }}>
             Adım {step + 1} / {TOTAL_STEPS}
           </ThemedText>
-          <View style={{ width: 26 }} />
+          {/* Dönen kullanıcı: kişiselleştirmeyi atlayıp doğrudan giriş yapabilir. */}
+          {step === 0 ? (
+            <Pressable
+              onPress={() => router.push({ pathname: '/login', params: { mode: 'signin' } } as Href)}
+              hitSlop={8}>
+              <ThemedText type="smallBold" style={{ fontSize: 13, color: theme.primary }}>
+                Giriş yap
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <View style={{ width: 26 }} />
+          )}
         </View>
         <ProgressBar progress={(step + 1) / TOTAL_STEPS} color={theme.primary} />
         <View style={{ gap: Spacing.one, marginTop: Spacing.three }}>

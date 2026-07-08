@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -10,7 +9,7 @@ type ScreenProps = {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: ViewStyle;
-  /** Giriş animasyonunu kapatmak için (varsayılan açık). */
+  /** Eski API uyumu için duruyor; giriş animasyonu artık kullanılmıyor. */
   animated?: boolean;
 };
 
@@ -19,25 +18,20 @@ type ScreenProps = {
  * - tema arka planı
  * - güvenli alan (çentik / alt çubuk) boşlukları
  * - opsiyonel kaydırma
- * - içerik için yumuşak giriş animasyonu (aşağıdan yukarı belirme)
+ * Not: içerik giriş animasyonu kullanıcı geri bildirimiyle kaldırıldı (rahatsız ediciydi).
  */
-export function Screen({ children, scroll = true, contentStyle, animated = true }: ScreenProps) {
+export function Screen({ children, scroll = true, contentStyle }: ScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   const padding = {
     paddingTop: insets.top + Spacing.two,
-    paddingBottom: insets.bottom + Spacing.six,
+    // Yüzen alt menüyü (inset + ~68px) rahatça geçecek kadar boşluk.
+    paddingBottom: insets.bottom + Spacing.six + Spacing.four,
     paddingHorizontal: Spacing.three,
   };
 
-  const inner = (
-    <Animated.View
-      entering={animated ? FadeInDown.duration(320).springify().damping(18) : undefined}
-      style={[styles.inner, !scroll && { flex: 1 }]}>
-      {children}
-    </Animated.View>
-  );
+  const inner = <View style={[styles.inner, !scroll && { flex: 1 }]}>{children}</View>;
 
   if (scroll) {
     return (

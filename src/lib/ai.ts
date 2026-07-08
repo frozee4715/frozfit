@@ -32,7 +32,9 @@ type ProxyMessage = { role: string; content: string | MultimodalContent[] };
  * İsteğe giriş yapmış kullanıcının Firebase ID token'ı eklenir (Worker doğrular).
  * model verilmezse sunucu varsayılan modeli + yedek zincirini kullanır.
  */
-async function callProxy(messages: ProxyMessage[], maxTokens: number, model?: string): Promise<string> {
+type ProxyOpts = { model?: string; cache?: boolean };
+
+async function callProxy(messages: ProxyMessage[], maxTokens: number, opts: ProxyOpts = {}): Promise<string> {
   if (!PROXY_URL) throw new Error('AI yapılandırılmamış.');
 
   const user = auth?.currentUser;
@@ -42,7 +44,13 @@ async function callProxy(messages: ProxyMessage[], maxTokens: number, model?: st
   const res = await fetch(PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ messages, maxTokens, ...(model ? { model } : {}) }),
+    body: JSON.stringify({
+      messages,
+      maxTokens,
+      ...(opts.model ? { model: opts.model } : {}),
+      // Sunucuda varsayılan önbellek açık; yalnızca açıkça false ise atlanır.
+      ...(opts.cache === false ? { cache: false } : {}),
+    }),
   });
 
   if (!res.ok) {
@@ -83,9 +91,9 @@ function contextLines(ctx?: AIContext): string {
 }
 
 /** AI sohbeti — tüm metin istekleri proxy üzerinden gider. */
-async function chat(messages: ChatMessage[], maxTokens = 1200): Promise<string> {
+async function chat(messages: ChatMessage[], maxTokens = 1200, cache = true): Promise<string> {
   if (!isProxyEnabled()) throw new Error('AI yapılandırılmamış.');
-  return callProxy(messages as ProxyMessage[], maxTokens);
+  return callProxy(messages as ProxyMessage[], maxTokens, { cache });
 }
 
 export type GeneratedRecipe = {
@@ -135,12 +143,13 @@ export async function generateRecipe(request: string, ctx?: AIContext): Promise<
   ];
 
   // İlk yanıt geçerli JSON değilse bir kez daha dene (modele JSON'u hatırlat).
+  // Üretken istek: her "yeniden oluştur" farklı sonuç versin diye önbellek kapalı.
   let raw: any;
   try {
-    raw = extractJson(await chat(messages));
+    raw = extractJson(await chat(messages, 1200, false));
   } catch {
     raw = extractJson(
-      await chat([...messages, { role: 'user', content: 'Lütfen SADECE istenen JSON nesnesini döndür.' }]),
+      await chat([...messages, { role: 'user', content: 'Lütfen SADECE istenen JSON nesnesini döndür.' }], 1200, false),
     );
   }
 
@@ -196,14 +205,26 @@ export async function generateMealPlan(ctx?: AIContext): Promise<MealPlanDay[]> 
   ]
     .filter(Boolean)
     .join('\n');
-  const content = await chat(
-    [
-      { role: 'system', content: system },
-      { role: 'user', content: 'Haftalık planı oluştur.' },
-    ],
-    2800,
-  );
-  const arr = extractJsonArray(content);
+  const messages: ChatMessage[] = [
+    { role: 'system', content: system },
+    { role: 'user', content: 'Haftalık planı oluştur.' },
+  ];
+
+  // 7 gün × 3 öğün uzun yanıt üretir; token limitini yüksek tut. İlk deneme
+  // ayrıştırılamazsa (kesilme/biçim) bir kez daha dene.
+  // Üretken istek: her "yeniden oluştur" farklı plan versin diye önbellek kapalı.
+  let arr: any[];
+  try {
+    arr = extractJsonArray(await chat(messages, 4000, false));
+  } catch {
+    arr = extractJsonArray(
+      await chat(
+        [...messages, { role: 'user', content: 'Lütfen SADECE geçerli JSON dizisini döndür, başka metin ekleme.' }],
+        4000,
+        false,
+      ),
+    );
+  }
   return arr.map((d: any) => ({
     day: String(d?.day ?? '').trim(),
     meals: Array.isArray(d?.meals)
@@ -216,15 +237,65 @@ export async function generateMealPlan(ctx?: AIContext): Promise<MealPlanDay[]> 
   }));
 }
 
-/** Metinden ilk JSON dizisini çıkarır. */
+/**
+ * Metinden JSON dizisini çıkarır. Yanıt token limitine takılıp KESİLMİŞSE bile
+ * (kapanmamış `]`), içindeki TAM nesneleri tek tek kurtararak diziyi döndürür.
+ */
 function extractJsonArray(text: string): any[] {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidate = fenced ? fenced[1] : text;
   const start = candidate.indexOf('[');
+  if (start === -1) throw new Error('AI yanıtı çözümlenemedi.');
+
+  // Önce tam ve geçerli dizi olarak dene.
   const end = candidate.lastIndexOf(']');
-  if (start === -1 || end === -1 || end <= start) throw new Error('AI yanıtı çözümlenemedi.');
-  const parsed = JSON.parse(candidate.slice(start, end + 1));
-  return Array.isArray(parsed) ? parsed : [];
+  if (end > start) {
+    try {
+      const parsed = JSON.parse(candidate.slice(start, end + 1));
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // düş → kesik yanıt kurtarmaya geç
+    }
+  }
+
+  // Kurtarma: dengeli { } bloklarını tek tek ayrıştır (kesik yanıtları tolere eder).
+  const objects = salvageObjects(candidate.slice(start));
+  if (objects.length === 0) throw new Error('AI yanıtı çözümlenemedi.');
+  return objects;
+}
+
+/** Metindeki dengeli üst-seviye {...} bloklarını bulur ve tek tek JSON.parse eder. */
+function salvageObjects(text: string): any[] {
+  const out: any[] = [];
+  let depth = 0;
+  let startIdx = -1;
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{') {
+      if (depth === 0) startIdx = i;
+      depth++;
+    } else if (ch === '}') {
+      if (depth > 0) depth--;
+      if (depth === 0 && startIdx !== -1) {
+        try {
+          out.push(JSON.parse(text.slice(startIdx, i + 1)));
+        } catch {
+          /* bozuk bloğu atla */
+        }
+        startIdx = -1;
+      }
+    }
+  }
+  return out;
 }
 
 export type FoodEstimate = { name: string; kcal: number; protein: number; carbs: number; fat: number };
@@ -256,7 +327,7 @@ export async function analyzeFoodPhoto(imageDataUrl: string, ctx?: AIContext): P
     },
   ];
 
-  const text = await callProxy(messages, 600, VISION_MODEL);
+  const text = await callProxy(messages, 600, { model: VISION_MODEL });
   if (!text.trim()) throw new Error('AI boş yanıt döndürdü.');
 
   const raw = extractJson(text);
@@ -296,7 +367,7 @@ export async function detectFridgeIngredients(imageDataUrl: string): Promise<str
     },
   ];
 
-  const text = await callProxy(messages, 800, VISION_MODEL);
+  const text = await callProxy(messages, 800, { model: VISION_MODEL });
   if (!text.trim()) throw new Error('AI boş yanıt döndürdü.');
 
   const arr = extractJsonArray(text);

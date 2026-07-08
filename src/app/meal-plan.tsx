@@ -113,29 +113,74 @@ export default function MealPlanScreen() {
           </ThemedText>
         )}
 
-        {plan.map((day, i) => (
-          <Card key={i} style={{ gap: Spacing.two }}>
-            <ThemedText type="smallBold" style={{ fontSize: 16, color: theme.primary }}>
-              {day.day}
-            </ThemedText>
-            {day.meals.map((m, j) => (
-              <View key={j} style={styles.mealRow}>
-                <ThemedText type="small" themeColor="textSecondary" style={{ width: 70, fontSize: 13 }}>
-                  {m.meal}
+        {plan.map((day, i) => {
+          const total = day.meals.reduce((s, m) => s + (m.kcal || 0), 0);
+          return (
+            <Card key={i} style={styles.dayCard}>
+              <View style={styles.dayHeader}>
+                <View style={[styles.dayBadge, { backgroundColor: theme.primarySoft }]}>
+                  <ThemedText type="smallBold" style={{ fontSize: 13, color: theme.primaryDark }}>
+                    {i + 1}
+                  </ThemedText>
+                </View>
+                <ThemedText type="smallBold" style={{ flex: 1, fontSize: 17 }}>
+                  {day.day}
                 </ThemedText>
-                <ThemedText type="small" style={{ flex: 1, fontSize: 14 }}>
-                  {m.name}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 12 }}>
-                  {m.kcal} kcal
-                </ThemedText>
+                {total > 0 ? (
+                  <View style={[styles.totalPill, { backgroundColor: theme.backgroundElement }]}>
+                    <Ionicons name="flame" size={13} color={theme.calorie} />
+                    <ThemedText type="smallBold" style={{ fontSize: 12, color: theme.calorie }}>
+                      {total} kcal
+                    </ThemedText>
+                  </View>
+                ) : null}
               </View>
-            ))}
-          </Card>
-        ))}
+
+              <View style={{ gap: Spacing.two }}>
+                {day.meals.map((m, j) => {
+                  const mi = mealVisual(m.meal, theme);
+                  return (
+                    <View
+                      key={j}
+                      style={[styles.mealRow, { backgroundColor: theme.backgroundElement }]}>
+                      <View style={[styles.mealIcon, { backgroundColor: mi.bg }]}>
+                        <Ionicons name={mi.icon} size={16} color={mi.color} />
+                      </View>
+                      <View style={{ flex: 1, gap: 1 }}>
+                        <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 11 }}>
+                          {m.meal}
+                        </ThemedText>
+                        <ThemedText type="smallBold" style={{ fontSize: 14 }} numberOfLines={2}>
+                          {m.name}
+                        </ThemedText>
+                      </View>
+                      {m.kcal > 0 ? (
+                        <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>
+                          {m.kcal} kcal
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            </Card>
+          );
+        })}
       </Screen>
     </View>
   );
+}
+
+/** Öğün adına göre ikon + renk (kahvaltı/öğle/akşam/ara öğün). */
+function mealVisual(
+  meal: string,
+  theme: ReturnType<typeof useTheme>,
+): { icon: keyof typeof Ionicons.glyphMap; bg: string; color: string } {
+  const m = meal.toLocaleLowerCase('tr');
+  if (m.includes('kahvalt')) return { icon: 'sunny', bg: '#FFF4D6', color: '#E6A100' };
+  if (m.includes('öğle') || m.includes('ogle')) return { icon: 'restaurant', bg: theme.primarySoft, color: theme.primaryDark };
+  if (m.includes('akşam') || m.includes('aksam')) return { icon: 'moon', bg: '#E3E0FF', color: '#5A4FCF' };
+  return { icon: 'nutrition', bg: '#FFE3EC', color: '#D6336C' };
 }
 
 const styles = StyleSheet.create({
@@ -155,10 +200,42 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: Radius.pill,
   },
-  mealRow: {
+  dayCard: {
+    gap: Spacing.three,
+  },
+  dayHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+  },
+  dayBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  totalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+  },
+  mealRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.two,
+    borderRadius: Radius.md,
+  },
+  mealIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   premiumGate: {
     flexDirection: 'row',

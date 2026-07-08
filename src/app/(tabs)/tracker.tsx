@@ -16,7 +16,6 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { CalorieRing } from '@/components/ui/calorie-ring';
 import { Card } from '@/components/ui/card';
-import { GoalRings } from '@/components/ui/goal-rings';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Screen } from '@/components/ui/screen';
 import { dailyNutrition } from '@/constants/mock-data';
@@ -101,25 +100,28 @@ export default function TrackerScreen() {
         )}
       </View>
 
-      {/* Günlük hedef halkaları */}
-      <Card>
-        <GoalRings
-          rings={[
-            { label: 'Kalori', value: totals.kcal, goal: calorieGoal, color: theme.calorie },
-            { label: 'Protein', value: totals.protein, goal: plan?.protein ?? dailyNutrition.protein.goal, color: theme.protein },
-            { label: 'Su', value: log.water, goal: waterGoal, color: theme.protein },
-          ]}
-        />
-      </Card>
-
-      {/* Kalori özeti */}
-      <Card style={{ alignItems: 'center', gap: Spacing.three }}>
-        <CalorieRing consumed={totals.kcal} goal={calorieGoal} />
-        <View style={styles.calorieFooter}>
-          <CalStat label="Hedef" value={calorieGoal} color={theme.textSecondary} />
-          <CalStat label="Alınan" value={totals.kcal} color={theme.calorie} />
-          <CalStat label="Kalan" value={Math.max(0, calorieGoal - totals.kcal)} color={theme.primary} />
+      {/* Günün özeti: kalori halkası + makrolar tek kartta */}
+      <Card style={{ gap: Spacing.three }}>
+        <View style={{ alignItems: 'center', gap: Spacing.three }}>
+          <CalorieRing consumed={totals.kcal} goal={calorieGoal} />
+          <View style={styles.calorieFooter}>
+            <CalStat label="Hedef" value={calorieGoal} color={theme.textSecondary} />
+            <CalStat label="Alınan" value={totals.kcal} color={theme.calorie} />
+            <CalStat label="Kalan" value={Math.max(0, calorieGoal - totals.kcal)} color={theme.primary} />
+          </View>
         </View>
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        {macros.map((m) => (
+          <View key={m.label} style={{ gap: Spacing.one }}>
+            <View style={styles.macroLabelRow}>
+              <ThemedText type="small">{m.label}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {m.current} / {m.goal} g
+              </ThemedText>
+            </View>
+            <ProgressBar progress={m.goal > 0 ? m.current / m.goal : 0} color={m.color} />
+          </View>
+        ))}
       </Card>
 
       {/* Bugün ne yesem? (AI) */}
@@ -141,24 +143,6 @@ export default function TrackerScreen() {
           <Ionicons name="chevron-forward" size={18} color={theme.primaryDark} />
         </Pressable>
       )}
-
-      {/* Makrolar */}
-      <Card style={{ gap: Spacing.three }}>
-        <ThemedText type="smallBold" style={{ fontSize: 16 }}>
-          Makro besinler
-        </ThemedText>
-        {macros.map((m) => (
-          <View key={m.label} style={{ gap: Spacing.one }}>
-            <View style={styles.macroLabelRow}>
-              <ThemedText type="small">{m.label}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {m.current} / {m.goal} g
-              </ThemedText>
-            </View>
-            <ProgressBar progress={m.goal > 0 ? m.current / m.goal : 0} color={m.color} />
-          </View>
-        ))}
-      </Card>
 
       {/* Su takibi */}
       <Card style={{ gap: Spacing.three }}>
@@ -676,6 +660,10 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingTop: Spacing.two,
   },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    width: '100%',
+  },
   macroLabelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -686,8 +674,8 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   waterGlass: {
-    height: 36,
-    borderRadius: Radius.sm,
+    height: 40,
+    borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
   },
   workoutRow: {

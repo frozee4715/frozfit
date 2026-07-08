@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
@@ -32,6 +34,7 @@ import {
   type Gender,
   type Goal,
 } from '@/lib/plan';
+import { isUploadEnabled, uploadRecipeImage } from '@/lib/supabase-upload';
 import { updateProfile, useUserProfile } from '@/lib/user-profile';
 
 const MEAL_COUNTS = [2, 3, 4, 5];
@@ -59,6 +62,8 @@ export default function EditProfileScreen() {
   const { profile } = useUserProfile();
 
   const [name, setName] = useState(profile?.name ?? '');
+  const [photoUri, setPhotoUri] = useState<string | null>(profile?.photoUri ?? null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [gender, setGender] = useState<Gender>(profile?.gender ?? 'female');
   const [age, setAge] = useState(profile?.age ? String(profile.age) : '');
   const [height, setHeight] = useState(profile?.height ? String(profile.height) : '');
@@ -75,6 +80,40 @@ export default function EditProfileScreen() {
   const [dislikes, setDislikes] = useState((profile?.dislikes ?? []).join(', '));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Galeriden fotoğraf seç → mümkünse Supabase'e yükle (kalıcı URL), değilse
+  // yerel URI'yi kullan (yalnızca bu cihazda görünür).
+  const pickPhoto = async () => {
+    setError(null);
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError('Fotoğraf seçmek için galeri izni gerekli.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: isUploadEnabled(),
+    });
+    if (res.canceled || !res.assets[0]) return;
+    const asset = res.assets[0];
+    setPhotoBusy(true);
+    try {
+      if (isUploadEnabled() && asset.base64 && user) {
+        const url = await uploadRecipeImage(user.uid, asset.base64);
+        setPhotoUri(url);
+      } else {
+        // Supabase kapalıysa yerel URI (cihaz değişince kaybolur — bilgilendirici).
+        setPhotoUri(asset.uri);
+      }
+    } catch {
+      setError('Fotoğraf yüklenemedi. İnternet bağlantını kontrol et.');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
 
   const dislikeList = dislikes.split(',').map((d) => d.trim()).filter(Boolean);
   const toggleAllergy = (key: AllergenKey) =>
@@ -107,6 +146,7 @@ export default function EditProfileScreen() {
     try {
       await updateProfile(user.uid, {
         name: name.trim(),
+        photoUri,
         gender,
         goal,
         activity,
@@ -142,6 +182,31 @@ export default function EditProfileScreen() {
       </View>
 
       <Screen>
+        {/* Profil fotoğrafı */}
+        <View style={{ alignItems: 'center', gap: Spacing.two }}>
+          <Pressable onPress={pickPhoto} disabled={photoBusy}>
+            <View style={[styles.photo, { backgroundColor: theme.primary, borderColor: theme.card }]}>
+              {photoBusy ? (
+                <ActivityIndicator color="#fff" />
+              ) : photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.photoImg} contentFit="cover" />
+              ) : (
+                <ThemedText style={{ color: '#fff', fontSize: 34, fontWeight: '700' }}>
+                  {name.trim().slice(0, 1).toUpperCase() || '👤'}
+                </ThemedText>
+              )}
+              <View style={[styles.photoBadge, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Ionicons name="camera" size={16} color={theme.text} />
+              </View>
+            </View>
+          </Pressable>
+          <Pressable onPress={pickPhoto} disabled={photoBusy} hitSlop={8}>
+            <ThemedText type="smallBold" style={{ color: theme.primary, fontSize: 13 }}>
+              {photoUri ? 'Fotoğrafı değiştir' : 'Profil fotoğrafı ekle'}
+            </ThemedText>
+          </Pressable>
+        </View>
+
         {/* Kişisel bilgiler */}
         <Field label="Adın">
           <TextField placeholder="Adın" value={name} onChangeText={setName} />
@@ -295,6 +360,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  photo: {
+    width: 96,
+    height: 96,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    overflow: 'visible',
+  },
+  photoImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: Radius.pill,
+  },
+  photoBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 32,
+    height: 32,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
   goalBtn: {
     flex: 1,

@@ -11,19 +11,19 @@ import { useTheme } from '@/hooks/use-theme';
 const SECTIONS: { title: string; body: string }[] = [
   {
     title: 'Hangi verileri topluyoruz?',
-    body: 'E-posta adresin, profil bilgilerin (yaş, boy, kilo, hedefler), beslenme kayıtların, kilo tartımların ve paylaştığın tarifler hesabına bağlı olarak saklanır.',
+    body: 'Yalnızca uygulamanın çalışması için gerekli olanları: e-posta adresin, profil bilgilerin (yaş, boy, kilo, hedefler), beslenme ve tartım kayıtların ile paylaştığın tarifler. Bu bilgiler yalnızca senin hesabına bağlı tutulur.',
   },
   {
-    title: 'Verilerin nerede tutuluyor?',
-    body: 'Verilerin Google Firebase (Firestore) üzerinde, hesabına bağlı olarak güvenli şekilde saklanır. Sadece sen erişebilirsin; topluluk tarifleri ise herkese açıktır.',
+    title: 'Verilerin nasıl korunuyor?',
+    body: 'Verilerin şifreli bağlantı üzerinden iletilir ve güvenli bulut altyapısında hesabına bağlı olarak saklanır. Bu bilgilere yalnızca sen erişebilirsin. Yalnızca senin herkese açık olarak paylaşmayı seçtiğin tarifler diğer kullanıcılarca görülebilir.',
   },
   {
-    title: 'AI özellikleri',
-    body: 'AI tarif/koç ve fotoğraf analizi özelliklerini kullandığında yazdığın istek, ilgili görsel ve profil bağlamın (diyet, alerji, kalori hedefi) yanıt üretmek için güvenli bir proxy sunucusu (Cloudflare Workers) aracılığıyla AI sağlayıcılarına (Google Gemini ve OpenRouter) iletilir.',
+    title: 'Yapay zeka özellikleri',
+    body: 'Tarif, koç ve fotoğraf analizi gibi yapay zeka özelliklerini kullandığında; isteğin güvenli bir bağlantı üzerinden işlenip sana yanıt üretilir. Bu içerikler reklam veya pazarlama amacıyla kullanılmaz, üçüncü kişilerle paylaşılmaz.',
   },
   {
-    title: 'Verilerini silme',
-    body: 'Hesabını ve verilerini silmek istersen Yardım & Destek üzerinden bize ulaşabilirsin.',
+    title: 'Verilerini yönetme ve silme',
+    body: 'Verilerin sana aittir. Hesabını ve tüm verilerini istediğin zaman uygulama içinden veya Yardım & Destek üzerinden bize ulaşarak kalıcı olarak sildirebilirsin.',
   },
 ];
 

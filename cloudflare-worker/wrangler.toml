@@ -9,3 +9,8 @@ FIREBASE_PROJECT_ID = "fitaiapp-de146"
 # GİZLİ anahtarlar wrangler.toml'a YAZILMAZ. Şu komutlarla ayarlanır:
 #   npx wrangler secret put GEMINI_API_KEY
 #   npx wrangler secret put OPENROUTER_API_KEY
+
+# Önbellek (aynı görsel/metin → sıfır token). AI_CACHE namespace bağlaması:
+[[kv_namespaces]]
+binding = "AI_CACHE"
+id = "f8fd9851e0dd415dba6eb43d8f53586a"

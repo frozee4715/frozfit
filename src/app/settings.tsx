@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { type Href, useRouter } from 'expo-router';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { Field, OptionRow } from '@/components/ui/form';
 import { Screen } from '@/components/ui/screen';
-import { Spacing } from '@/constants/theme';
+import { type AccentKey, Accents, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/lib/i18n';
+import { usePremium } from '@/lib/premium';
 import { type Language, type ThemeMode, type WeightUnit, useSettings } from '@/lib/settings';
 
 export default function SettingsScreen() {
@@ -16,7 +17,20 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const t = useT();
-  const { themeMode, weightUnit, language, setThemeMode, setWeightUnit, setLanguage } = useSettings();
+  const { isPremium } = usePremium();
+  const { themeMode, weightUnit, language, accent, setThemeMode, setWeightUnit, setLanguage, setAccent } =
+    useSettings();
+
+  const pickAccent = (key: AccentKey) => {
+    if (Accents[key].premium && !isPremium) {
+      Alert.alert('Premium özellik', 'Özel renk temaları Premium aboneliğiyle açılır.', [
+        { text: 'Vazgeç', style: 'cancel' },
+        { text: "Premium'u gör", onPress: () => router.push('/premium' as Href) },
+      ]);
+      return;
+    }
+    setAccent(key);
+  };
 
   const themeOptions: { value: ThemeMode; title: string }[] = [
     { value: 'system', title: t('settings.theme.system') },
@@ -77,6 +91,45 @@ export default function SettingsScreen() {
           </View>
         </Field>
 
+        <Field label="Renk teması">
+          <View style={styles.accentRow}>
+            {(Object.keys(Accents) as AccentKey[]).map((key) => {
+              const a = Accents[key];
+              const selected = accent === key;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => pickAccent(key)}
+                  style={[
+                    styles.accentItem,
+                    {
+                      backgroundColor: theme.card,
+                      borderColor: selected ? a.swatch : theme.border,
+                      borderWidth: selected ? 2 : StyleSheet.hairlineWidth,
+                    },
+                  ]}>
+                  <View style={[styles.accentDot, { backgroundColor: a.swatch }]}>
+                    {selected && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  </View>
+                  <ThemedText type="small" style={{ fontSize: 12 }}>
+                    {a.label}
+                  </ThemedText>
+                  {a.premium && !isPremium && (
+                    <View style={styles.lockBadge}>
+                      <Ionicons name="star" size={10} color="#B8860B" />
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+          {!isPremium && (
+            <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 12, marginTop: Spacing.one }}>
+              ⭐ işaretli temalar Premium ile açılır.
+            </ThemedText>
+          )}
+        </Field>
+
         <Field label={t('settings.weightUnit')}>
           <View style={{ gap: Spacing.two }}>
             {unitOptions.map((o) => (
@@ -102,5 +155,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  accentRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  accentItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.md,
+  },
+  accentDot: {
+    width: 30,
+    height: 30,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
   },
 });

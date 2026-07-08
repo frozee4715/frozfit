@@ -10,7 +10,7 @@
  * Expo Go'da çökmeyecek şekilde sarmalanmıştır (src/lib/purchases.ts).
  */
 import { doc, onSnapshot } from 'firebase/firestore';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { useAuth } from '@/lib/auth-context';
 import { db } from '@/lib/firebase';
@@ -21,6 +21,7 @@ import {
   getProPackages,
   hasProEntitlement,
   isPurchasesSupported,
+  lastPackagesError,
   purchaseProPackage,
   restorePurchasesSafe,
   type PurchasePackage,
@@ -34,6 +35,12 @@ type PremiumContextValue = {
   purchasesSupported: boolean;
   /** Satın alınabilir paketler (RevenueCat offering). */
   packages: PurchasePackage[];
+  /** Paketler denemelere rağmen yüklenemedi (mağaza/yapılandırma sorunu). */
+  packagesError: boolean;
+  /** Son yükleme hatasının teknik detayı (teşhis için). */
+  packagesErrorDetail: string | null;
+  /** Paketleri yeniden yüklemeyi dener. */
+  refreshPackages: () => Promise<void>;
   /** Bir paketi satın alır. */
   purchase: (pkg: PurchasePackage) => Promise<PurchaseResult>;
   /** Önceki satın alımları geri yükler. */
@@ -45,6 +52,9 @@ const PremiumContext = createContext<PremiumContextValue>({
   ready: false,
   purchasesSupported: false,
   packages: [],
+  packagesError: false,
+  packagesErrorDetail: null,
+  refreshPackages: async () => {},
   purchase: async () => ({ success: false, isPro: false }),
   restore: async () => ({ success: false, isPro: false }),
 });
@@ -54,7 +64,25 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   const [rcPremium, setRcPremium] = useState(false);
   const [firestorePremium, setFirestorePremium] = useState(false);
   const [packages, setPackages] = useState<PurchasePackage[]>([]);
+  const [packagesError, setPackagesError] = useState(false);
+  const [packagesErrorDetail, setPackagesErrorDetail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+
+  /** Paketleri yükler; boş dönerse kısa aralıklarla birkaç kez daha dener. */
+  const loadPackages = useCallback(async (attempts = 3): Promise<void> => {
+    setPackagesError(false);
+    setPackagesErrorDetail(null);
+    for (let i = 0; i < attempts; i++) {
+      const pkgs = await getProPackages();
+      if (pkgs.length > 0) {
+        setPackages(pkgs);
+        return;
+      }
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 2500 * (i + 1)));
+    }
+    setPackagesError(true);
+    setPackagesErrorDetail(lastPackagesError);
+  }, []);
 
   // RevenueCat: yapılandır, durumu çek, dinle.
   useEffect(() => {
@@ -69,19 +97,19 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       await configurePurchases(user?.uid);
       const info = await getCustomerInfoSafe();
       if (!cancelled && info) setRcPremium(hasProEntitlement(info));
-      const pkgs = await getProPackages();
-      if (!cancelled) setPackages(pkgs);
       cleanup = addCustomerInfoListener((newInfo) => {
         setRcPremium(hasProEntitlement(newInfo));
       });
       if (!cancelled) setReady(true);
+      // Paket yüklemesi arka planda, yeniden denemeli sürer.
+      loadPackages();
     })();
 
     return () => {
       cancelled = true;
       cleanup();
     };
-  }, [user?.uid]);
+  }, [user?.uid, loadPackages]);
 
   // Firestore: ileride webhook premium yazarsa diye yedek okuma.
   useEffect(() => {
@@ -118,6 +146,9 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
         ready,
         purchasesSupported: isPurchasesSupported(),
         packages,
+        packagesError,
+        packagesErrorDetail,
+        refreshPackages: () => loadPackages(2),
         purchase,
         restore,
       }}>

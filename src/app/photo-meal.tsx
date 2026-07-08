@@ -135,10 +135,46 @@ export default function PhotoMealScreen() {
         </View>
 
         {imageUri && (
-          <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" />
+          <View style={styles.scanFrame}>
+            <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" />
+
+            {/* Köşe çerçeveleri (tarama görünümü) */}
+            <View style={[styles.corner, styles.cornerTL, { borderColor: theme.primary }]} />
+            <View style={[styles.corner, styles.cornerTR, { borderColor: theme.primary }]} />
+            <View style={[styles.corner, styles.cornerBL, { borderColor: theme.primary }]} />
+            <View style={[styles.corner, styles.cornerBR, { borderColor: theme.primary }]} />
+
+            {loading && (
+              <View style={styles.scanOverlayCenter}>
+                <View style={styles.loadingPill}>
+                  <ActivityIndicator color="#fff" />
+                  <ThemedText type="small" style={{ color: '#fff', fontSize: 13 }}>
+                    Analiz ediliyor…
+                  </ThemedText>
+                </View>
+              </View>
+            )}
+
+            {estimate && !loading && (
+              <>
+                <View style={[styles.pos, styles.posTop]}>
+                  <Bubble big value={`${estimate.kcal}`} unit="Kcal" label="Kalori" color={theme.calorie} />
+                </View>
+                <View style={[styles.pos, styles.posLeft]}>
+                  <Bubble value={`${estimate.fat}`} unit="g" label="Yağ" color={theme.fat} />
+                </View>
+                <View style={[styles.pos, styles.posRight]}>
+                  <Bubble value={`${estimate.protein}`} unit="g" label="Protein" color={theme.protein} />
+                </View>
+                <View style={[styles.pos, styles.posBottom]}>
+                  <Bubble value={`${estimate.carbs}`} unit="g" label="Karb" color={theme.carbs} />
+                </View>
+              </>
+            )}
+          </View>
         )}
 
-        {loading && (
+        {loading && !imageUri && (
           <View style={{ alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.three }}>
             <ActivityIndicator color={theme.primary} />
             <ThemedText type="small" themeColor="textSecondary">
@@ -158,12 +194,6 @@ export default function PhotoMealScreen() {
             <ThemedText type="subtitle" style={{ fontSize: 20 }}>
               {estimate.name}
             </ThemedText>
-            <View style={styles.macroRow}>
-              <Macro label="Kalori" value={`${estimate.kcal}`} color={theme.calorie} />
-              <Macro label="Prot" value={`${estimate.protein}g`} color={theme.protein} />
-              <Macro label="Karb" value={`${estimate.carbs}g`} color={theme.carbs} />
-              <Macro label="Yağ" value={`${estimate.fat}g`} color={theme.fat} />
-            </View>
 
             <View style={styles.mealTypeRow}>
               {MEAL_TYPES.map((mt) => {
@@ -201,15 +231,32 @@ export default function PhotoMealScreen() {
   );
 }
 
-function Macro({ label, value, color }: { label: string; value: string; color: string }) {
-  const theme = useTheme();
+/** Fotoğrafın üstünde yüzen makro baloncuğu (tarama görünümü). */
+function Bubble({
+  value,
+  unit,
+  label,
+  color,
+  big,
+}: {
+  value: string;
+  unit: string;
+  label: string;
+  color: string;
+  big?: boolean;
+}) {
   return (
-    <View style={[styles.macroCell, { backgroundColor: theme.backgroundElement }]}>
-      <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 11 }}>
+    <View style={[styles.bubble, big && styles.bubbleBig]}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
+        <ThemedText type="smallBold" style={{ fontSize: big ? 22 : 16, color }}>
+          {value}
+        </ThemedText>
+        <ThemedText type="small" style={{ fontSize: big ? 12 : 10, color }}>
+          {unit}
+        </ThemedText>
+      </View>
+      <ThemedText type="small" style={{ fontSize: 10, color: '#5B6B63' }}>
         {label}
-      </ThemedText>
-      <ThemedText type="smallBold" style={{ fontSize: 14, color }}>
-        {value}
       </ThemedText>
     </View>
   );
@@ -233,23 +280,60 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: Radius.pill,
   },
-  preview: {
+  scanFrame: {
     width: '100%',
-    height: 220,
+    height: 320,
     borderRadius: Radius.lg,
+    overflow: 'hidden',
     backgroundColor: '#DDE6E1',
   },
-  macroRow: {
-    flexDirection: 'row',
-    gap: Spacing.two,
+  preview: {
+    ...StyleSheet.absoluteFillObject,
   },
-  macroCell: {
-    flex: 1,
+  corner: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+  },
+  cornerTL: { top: 14, left: 14, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 8 },
+  cornerTR: { top: 14, right: 14, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 8 },
+  cornerBL: { bottom: 14, left: 14, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 8 },
+  cornerBR: { bottom: 14, right: 14, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 8 },
+  scanOverlayCenter: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
-    gap: 2,
-    paddingVertical: Spacing.three,
-    borderRadius: Radius.md,
+    justifyContent: 'center',
   },
+  loadingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  bubble: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  bubbleBig: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  pos: { position: 'absolute' },
+  posTop: { top: 22, left: 0, right: 0, alignItems: 'center' },
+  posBottom: { bottom: 22, left: 0, right: 0, alignItems: 'center' },
+  posLeft: { left: 18, top: '44%' },
+  posRight: { right: 18, top: '36%' },
   mealTypeRow: {
     flexDirection: 'row',
     gap: Spacing.two,

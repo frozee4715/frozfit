@@ -68,7 +68,12 @@ export function useRecipes(): UseRecipesResult {
           setRecipes(mockRecipes);
           setUsingMock(true);
         } else {
-          setRecipes(snap.docs.map((d) => toRecipe(d.id, d.data())));
+          // Yerleşik katalog + Firestore birleşimi: Firestore'daki dökümanlar
+          // aynı id'li yerleşik tarifi günceller, topluluk tarifleri eklenir.
+          // Böylece uygulama güncellemesiyle gelen yeni tarifler her kullanıcıda görünür.
+          const merged = new Map(mockRecipes.map((r) => [r.id, r]));
+          snap.docs.forEach((d) => merged.set(d.id, toRecipe(d.id, d.data())));
+          setRecipes([...merged.values()]);
           setUsingMock(false);
         }
         setLoading(false);

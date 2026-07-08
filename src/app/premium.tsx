@@ -1,41 +1,84 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
+import { PRIVACY_URL, TERMS_URL } from '@/constants/links';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { PREMIUM_FEATURES, usePremium } from '@/lib/premium';
 import type { PurchasePackage } from '@/lib/purchases';
 
-// Apple, abonelik paywall'unda Kullanım Koşulları (EULA) + Gizlilik linki ZORUNLU kılar.
-const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-// GitHub Pages'te docs/privacy.html yayınlanınca aktif olur. GitHub kullanıcı adın farklıysa güncelle.
-const PRIVACY_URL = 'https://frozee4715.github.io/frozfit/privacy.html';
+/** Paketleri gösterim sırasına koyar: yıllık önce (öne çıkan), sonra aylık. */
+function sortPackages(pkgs: PurchasePackage[]): PurchasePackage[] {
+  const order = (p: PurchasePackage) =>
+    p.packageType === 'ANNUAL' ? 0 : p.packageType === 'MONTHLY' ? 1 : 2;
+  return [...pkgs].sort((a, b) => order(a) - order(b));
+}
+
+function packageLabel(p: PurchasePackage): { name: string; per: string } {
+  switch (p.packageType) {
+    case 'ANNUAL':
+      return { name: 'Yıllık', per: '/yıl' };
+    case 'MONTHLY':
+      return { name: 'Aylık', per: '/ay' };
+    case 'LIFETIME':
+      return { name: 'Ömür boyu', per: '' };
+    default:
+      return { name: p.title, per: '' };
+  }
+}
+
+/** Yıllık paketin aylığa göre yüzde kaç kazandırdığı (gösterilemiyorsa null). */
+function annualSavings(pkgs: PurchasePackage[]): number | null {
+  const monthly = pkgs.find((p) => p.packageType === 'MONTHLY');
+  const annual = pkgs.find((p) => p.packageType === 'ANNUAL');
+  if (!monthly || !annual || monthly.price <= 0 || annual.price <= 0) return null;
+  const pct = Math.round((1 - annual.price / (monthly.price * 12)) * 100);
+  return pct > 0 ? pct : null;
+}
 
 export default function PremiumScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isPremium, purchasesSupported, packages, purchase, restore } = usePremium();
+  const {
+    isPremium,
+    purchasesSupported,
+    packages,
+    packagesError,
+    packagesErrorDetail,
+    refreshPackages,
+    purchase,
+    restore,
+  } = usePremium();
   const [busy, setBusy] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const mainPackage: PurchasePackage | undefined = packages[0];
+  const sorted = sortPackages(packages);
+  const savings = annualSavings(packages);
+  const selected = sorted.find((p) => p.identifier === selectedId) ?? sorted[0];
+
+  // Paketler gelince varsayılan seçim: yıllık (ilk sıradaki).
+  useEffect(() => {
+    if (!selectedId && sorted.length > 0) setSelectedId(sorted[0].identifier);
+  }, [sorted, selectedId]);
 
   const openLink = (url: string) => {
     WebBrowser.openBrowserAsync(url).catch(() => Linking.openURL(url).catch(() => {}));
   };
 
   const handleSubscribe = async () => {
-    if (!mainPackage) return;
+    if (!selected) return;
     setBusy(true);
     try {
-      const res = await purchase(mainPackage);
+      const res = await purchase(selected);
       if (res.isPro) {
         Alert.alert('Teşekkürler! 🎉', 'Premium aktif. Tüm özellikler açıldı.');
       } else if (res.cancelled) {
@@ -61,6 +104,15 @@ export default function PremiumScreen() {
       }
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await refreshPackages();
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -132,7 +184,40 @@ export default function PremiumScreen() {
               Premium satın alma yalnızca App Store sürümünde çalışır (Expo Go&apos;da değil).
             </ThemedText>
           </Card>
-        ) : !mainPackage ? (
+        ) : packagesError && sorted.length === 0 ? (
+          <Card style={{ gap: Spacing.two, alignItems: 'center' }}>
+            <Ionicons name="cloud-offline-outline" size={28} color={theme.textMuted} />
+            <ThemedText type="smallBold" style={{ fontSize: 14, textAlign: 'center' }}>
+              Paketler yüklenemedi
+            </ThemedText>
+            <ThemedText
+              type="small"
+              themeColor="textSecondary"
+              style={{ fontSize: 12, textAlign: 'center' }}>
+              İnternet bağlantını kontrol edip tekrar dene.
+            </ThemedText>
+            {packagesErrorDetail ? (
+              <ThemedText
+                type="small"
+                themeColor="textMuted"
+                style={{ fontSize: 10, textAlign: 'center' }}>
+                Detay: {packagesErrorDetail}
+              </ThemedText>
+            ) : null}
+            <Pressable
+              onPress={handleRetry}
+              disabled={retrying}
+              style={[styles.retryBtn, { borderColor: theme.primary, opacity: retrying ? 0.6 : 1 }]}>
+              {retrying ? (
+                <ActivityIndicator size="small" color={theme.primary} />
+              ) : (
+                <ThemedText type="smallBold" style={{ color: theme.primary, fontSize: 14 }}>
+                  Tekrar dene
+                </ThemedText>
+              )}
+            </Pressable>
+          </Card>
+        ) : sorted.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: Spacing.three }}>
             <ActivityIndicator color={theme.primary} />
             <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12, marginTop: Spacing.two }}>
@@ -140,21 +225,69 @@ export default function PremiumScreen() {
             </ThemedText>
           </View>
         ) : (
-          <Pressable
-            onPress={handleSubscribe}
-            disabled={busy}
-            style={[styles.cta, { backgroundColor: theme.primary, opacity: busy ? 0.6 : 1 }]}>
-            {busy ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Ionicons name="star" size={20} color="#fff" />
-                <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 17 }}>
-                  Premium&apos;a geç — {mainPackage.priceString}
-                </ThemedText>
-              </>
-            )}
-          </Pressable>
+          <>
+            {/* Paket seçimi */}
+            <View style={{ gap: Spacing.two }}>
+              {sorted.map((p) => {
+                const isSelected = selected?.identifier === p.identifier;
+                const label = packageLabel(p);
+                const isAnnual = p.packageType === 'ANNUAL';
+                return (
+                  <Pressable
+                    key={p.identifier}
+                    onPress={() => setSelectedId(p.identifier)}
+                    style={[
+                      styles.packageCard,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: isSelected ? theme.primary : theme.border,
+                        borderWidth: isSelected ? 2 : StyleSheet.hairlineWidth,
+                      },
+                    ]}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                        <ThemedText type="smallBold" style={{ fontSize: 16 }}>
+                          {label.name}
+                        </ThemedText>
+                        {isAnnual && savings ? (
+                          <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+                            <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 11 }}>
+                              %{savings} avantajlı
+                            </ThemedText>
+                          </View>
+                        ) : null}
+                      </View>
+                      <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 13 }}>
+                        {p.priceString}
+                        {label.per}
+                      </ThemedText>
+                    </View>
+                    <Ionicons
+                      name={isSelected ? 'radio-button-on' : 'radio-button-off'}
+                      size={22}
+                      color={isSelected ? theme.primary : theme.textMuted}
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Pressable
+              onPress={handleSubscribe}
+              disabled={busy || !selected}
+              style={[styles.cta, { backgroundColor: theme.primary, opacity: busy ? 0.6 : 1 }]}>
+              {busy ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="star" size={20} color="#fff" />
+                  <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 17 }}>
+                    Premium&apos;a geç
+                  </ThemedText>
+                </>
+              )}
+            </Pressable>
+          </>
         )}
 
         {/* Yasal — Apple paywall'da zorunlu */}
@@ -210,6 +343,27 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  packageCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Radius.md,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
+  },
+  retryBtn: {
+    marginTop: Spacing.one,
+    paddingHorizontal: Spacing.four,
+    height: 40,
+    borderRadius: Radius.pill,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },

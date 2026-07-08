@@ -21,10 +21,27 @@ export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
   return (
     <PressableScale onPress={onPress}>
       <Card padded={false} style={styles.card}>
-        <RecipeImage uri={recipe.image} style={styles.image} />
+        <View>
+          <RecipeImage uri={recipe.image} style={styles.image} />
+          {/* Görsel üstü rozetler: fotoğrafa bakan göz kaloriyi anında görür. */}
+          <View style={styles.imageBadges}>
+            <View style={styles.imagePill}>
+              <Ionicons name="flame" size={12} color="#FFB199" />
+              <ThemedText type="small" style={{ color: '#fff', fontSize: 12 }}>
+                {recipe.kcal} kcal
+              </ThemedText>
+            </View>
+            <View style={styles.imagePill}>
+              <Ionicons name="time-outline" size={12} color="#fff" />
+              <ThemedText type="small" style={{ color: '#fff', fontSize: 12 }}>
+                {recipe.minutes} dk
+              </ThemedText>
+            </View>
+          </View>
+        </View>
         <View style={styles.body}>
           <View style={styles.tagRow}>
-            {recipe.tags.map((tag) => (
+            {recipe.tags.slice(0, 2).map((tag) => (
               <View key={tag} style={[styles.tag, { backgroundColor: theme.primarySoft }]}>
                 <ThemedText type="small" style={{ color: theme.primaryDark, fontSize: 12 }}>
                   {tag}
@@ -38,9 +55,8 @@ export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
           </ThemedText>
 
           <View style={styles.metaRow}>
-            <Meta icon="flame-outline" color={theme.calorie} text={`${recipe.kcal} kcal`} />
-            <Meta icon="time-outline" color={theme.textSecondary} text={`${recipe.minutes} dk`} />
             <Meta icon="barbell-outline" color={theme.protein} text={`${recipe.protein}g protein`} />
+            <Meta icon="leaf-outline" color={theme.primary} text={recipe.category} />
           </View>
         </View>
       </Card>
@@ -68,6 +84,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 170,
     backgroundColor: '#DDE6E1',
+  },
+  imageBadges: {
+    position: 'absolute',
+    bottom: Spacing.two,
+    left: Spacing.two,
+    flexDirection: 'row',
+    gap: Spacing.one + 2,
+  },
+  imagePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   body: {
     padding: Spacing.three,

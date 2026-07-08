@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { type Href, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -11,6 +12,7 @@ import { userProfile } from '@/constants/mock-data';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
+import { flagReturningToLogin } from '@/lib/auth-flow';
 import { useT } from '@/lib/i18n';
 import { goalLabel } from '@/lib/plan';
 import { usePremium } from '@/lib/premium';
@@ -109,9 +111,13 @@ export default function ProfileScreen() {
       {/* Profil başlığı */}
       <View style={{ alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.two }}>
         <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-          <ThemedText style={{ color: '#fff', fontSize: 34, fontWeight: '700' }}>
-            {initials}
-          </ThemedText>
+          {profile?.photoUri ? (
+            <Image source={{ uri: profile.photoUri }} style={styles.avatarImg} contentFit="cover" />
+          ) : (
+            <ThemedText style={{ color: '#fff', fontSize: 34, fontWeight: '700' }}>
+              {initials}
+            </ThemedText>
+          )}
         </View>
         <ThemedText type="subtitle" style={{ fontSize: 24, lineHeight: 30 }}>
           {name}
@@ -329,7 +335,12 @@ export default function ProfileScreen() {
 
       {/* Çıkış */}
       {user && (
-        <Pressable onPress={signOut} style={[styles.logoutBtn, { borderColor: theme.border }]}>
+        <Pressable
+          onPress={() => {
+            flagReturningToLogin();
+            signOut();
+          }}
+          style={[styles.logoutBtn, { borderColor: theme.border }]}>
           <Ionicons name="log-out-outline" size={18} color={theme.accent} />
           <ThemedText type="smallBold" style={{ color: theme.accent, fontSize: 15 }}>
             {t('profile.logout')}
@@ -479,6 +490,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
   },
   goalBadge: {
     flexDirection: 'row',

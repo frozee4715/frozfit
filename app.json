@@ -12,6 +12,7 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.frozfit.app",
       "supportsTablet": true,
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -59,7 +60,22 @@
         }
       ],
       "expo-notifications",
-      "expo-video"
+      "expo-video",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.256352515683-tsq0279r3d5o554hhq8icanh0s4da0c4"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

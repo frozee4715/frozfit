@@ -6,12 +6,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 
+import type { AccentKey } from '@/constants/theme';
+
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type WeightUnit = 'kg' | 'lb';
 export type Language = 'tr' | 'en';
 
-type Settings = { themeMode: ThemeMode; weightUnit: WeightUnit; language: Language };
-const DEFAULTS: Settings = { themeMode: 'system', weightUnit: 'kg', language: 'tr' };
+type Settings = {
+  themeMode: ThemeMode;
+  weightUnit: WeightUnit;
+  language: Language;
+  /** Özel renk teması (Premium; 'mint' ücretsiz varsayılan). */
+  accent: AccentKey;
+};
+const DEFAULTS: Settings = { themeMode: 'system', weightUnit: 'kg', language: 'tr', accent: 'mint' };
 const STORAGE_KEY = 'frozfit:settings';
 
 type SettingsContextValue = Settings & {
@@ -19,6 +27,7 @@ type SettingsContextValue = Settings & {
   setThemeMode: (m: ThemeMode) => void;
   setWeightUnit: (u: WeightUnit) => void;
   setLanguage: (l: Language) => void;
+  setAccent: (a: AccentKey) => void;
 };
 
 const SettingsContext = createContext<SettingsContextValue>({
@@ -27,6 +36,7 @@ const SettingsContext = createContext<SettingsContextValue>({
   setThemeMode: () => {},
   setWeightUnit: () => {},
   setLanguage: () => {},
+  setAccent: () => {},
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -56,6 +66,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setThemeMode: (themeMode) => persist({ ...settings, themeMode }),
     setWeightUnit: (weightUnit) => persist({ ...settings, weightUnit }),
     setLanguage: (language) => persist({ ...settings, language }),
+    setAccent: (accent) => persist({ ...settings, accent }),
   };
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

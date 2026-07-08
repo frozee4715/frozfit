@@ -21,12 +21,48 @@
 // ── OpenRouter ──────────────────────────────────────────────────────────────
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'google/gemini-2.5-flash';
+// Metin (tarif/koç/plan) yedek zinciri — Gemini dolduğunda sırayla denenir.
 const FALLBACK_MODELS = [
   'google/gemini-2.5-flash',
-  'openai/gpt-4o-mini',
-  'google/gemma-4-31b-it:free',
-  'meta-llama/llama-3.3-70b-instruct:free',
+  'deepseek/deepseek-chat',
 ];
+// Görsel (tabak/buzdolabı tarama) yedeği — SADECE görebilen modeller.
+// DeepSeek görsel işleyemez, bu yüzden vision isteklerinde ASLA kullanılmaz.
+const VISION_FALLBACK_MODELS = ['google/gemini-2.5-flash'];
+
+// Önbellek: aynı istek (aynı görsel/metin) tekrar gelirse AI'yi hiç çağırmadan
+// KV'den yanıtla → sıfır token. TTL 30 gün.
+const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+
+// ── Rate limit (uid başına, KV sabit-pencere) ───────────────────────────────
+// Amaç: geçerli token'la Worker'ı DOĞRUDAN çağırıp istemcideki kredi sistemini
+// atlayan kötüye kullanımı (cüzdan-DoS) sınırlamak. KV nihai-tutarlı olduğundan
+// katı bir kilit değil, ama maliyet tavanı için yeterli. Yalnızca gerçek AI
+// çağrısında (önbellek ISKA) sayılır → önbellekten dönenler ücretsiz sayılmaz.
+const RL_PER_MINUTE = 10;
+const RL_PER_DAY = 60;
+
+/** uid için dakikalık + günlük limiti aşarsa 429 fırlatır. KV yoksa sessiz geçer. */
+async function enforceRateLimit(env, uid) {
+  if (!env.AI_CACHE) return;
+  const now = Date.now();
+  const windows = [
+    { key: `rl:m:${uid}:${Math.floor(now / 60000)}`, limit: RL_PER_MINUTE, ttl: 120 },
+    { key: `rl:d:${uid}:${Math.floor(now / 86400000)}`, limit: RL_PER_DAY, ttl: 90000 },
+  ];
+  for (const w of windows) {
+    const count = parseInt((await env.AI_CACHE.get(w.key)) || '0', 10);
+    if (count >= w.limit) {
+      const err = new Error('Çok hızlı gidiyorsun. Lütfen biraz sonra tekrar dene.');
+      err.status = 429;
+      throw err;
+    }
+    w.next = count + 1;
+  }
+  await Promise.all(
+    windows.map((w) => env.AI_CACHE.put(w.key, String(w.next), { expirationTtl: w.ttl })),
+  );
+}
 
 // ── Gemini ────────────────────────────────────────────────────────────────
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -48,6 +84,21 @@ function json(body, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
   });
+}
+
+// ── Önbellek yardımcıları ─────────────────────────────────────────────────────
+
+/** Verilen metnin SHA-256 hex özetini üretir (önbellek anahtarı için). */
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** İstek görsel (image_url) içeriyor mu? Vision modeli seçimi + yedeği için. */
+function hasImage(messages) {
+  return messages.some(
+    (m) => Array.isArray(m.content) && m.content.some((p) => p && p.type === 'image_url'),
+  );
 }
 
 // ── Firebase ID token doğrulama (RS256, JWKS) ─────────────────────────────────
@@ -172,7 +223,15 @@ function toGemini(messages) {
 /** Gemini API'ye istek atar. Başarısızsa retryable bilgisiyle fırlatır. */
 async function callGemini(apiKey, messages, maxTokens) {
   const { systemInstruction, contents } = toGemini(messages);
-  const body = { contents, generationConfig: { maxOutputTokens: maxTokens } };
+  // ÖNEMLİ: gemini-2.5-flash bir "düşünme" (thinking) modelidir. thinkingConfig
+  // olmadan çıktı bütçesinin (maxOutputTokens) büyük kısmını görünmez düşünme
+  // token'larına harcar → yanıt JSON'u YARIDA KESİLİR → istemci çözümleyemez
+  // (özellikle görsel/JSON isteklerinde). Bizim tüm isteklerimiz kısa JSON/sohbet
+  // olduğu için düşünmeyi kapatıyoruz: tüm token'lar gerçek yanıta gider, hızlanır.
+  const body = {
+    contents,
+    generationConfig: { maxOutputTokens: maxTokens, thinkingConfig: { thinkingBudget: 0 } },
+  };
   if (systemInstruction) body.systemInstruction = systemInstruction;
 
   const res = await fetchWithTimeout(`${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
@@ -235,8 +294,8 @@ async function callOpenRouter(apiKey, model, messages, maxTokens) {
   return content;
 }
 
-/** Gemini → OpenRouter zinciriyle yanıt üretir. */
-async function runAiChain(env, messages, maxTokens, requestedModel) {
+/** Gemini → OpenRouter zinciriyle yanıt üretir. Görselde yalnızca vision-yetenekli yedek denenir. */
+async function runAiChain(env, messages, maxTokens, requestedModel, isVision) {
   const geminiKey = env.GEMINI_API_KEY;
   const openRouterKey = env.OPENROUTER_API_KEY;
   if (!geminiKey && !openRouterKey) {
@@ -264,11 +323,13 @@ async function runAiChain(env, messages, maxTokens, requestedModel) {
     }
   }
 
-  // 2) OpenRouter yedek model zinciri.
+  // 2) OpenRouter yedek model zinciri. Görselde yalnızca vision-yetenekli modeller.
   if (openRouterKey) {
     const requested =
       typeof requestedModel === 'string' && requestedModel.trim() ? requestedModel.trim() : DEFAULT_MODEL;
-    const models = [...new Set([requested, ...FALLBACK_MODELS])];
+    const models = isVision
+      ? [...VISION_FALLBACK_MODELS]
+      : [...new Set([requested, ...FALLBACK_MODELS])];
     for (const model of models) {
       try {
         return await callOpenRouter(openRouterKey, model, messages, maxTokens);
@@ -295,7 +356,7 @@ async function runAiChain(env, messages, maxTokens, requestedModel) {
 // ── Worker giriş noktası ─────────────────────────────────────────────────────
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
@@ -314,8 +375,9 @@ export default {
     if (!projectId) {
       return json({ error: 'Sunucu yapılandırması eksik.' }, 503);
     }
+    let claims;
     try {
-      await verifyFirebaseToken(token, projectId);
+      claims = await verifyFirebaseToken(token, projectId);
     } catch {
       return json({ error: 'Oturum doğrulanamadı. Tekrar giriş yap.' }, 401);
     }
@@ -332,9 +394,29 @@ export default {
       return json({ error: 'Geçersiz istek (messages eksik).' }, 400);
     }
     const maxTokens = Math.min(MAX_OUTPUT_TOKENS, Math.max(1, Number(data.maxTokens) || 1200));
+    const isVision = hasImage(messages);
+
+    // ── Önbellek: aynı istek (aynı görsel/metin) → AI'yi çağırmadan yanıtla ──
+    // İstemci `cache:false` gönderirse (ör. "Yeniden oluştur") atlanır; böylece
+    // üretken isteklerde çeşitlilik korunur, tekrarlarda token harcanmaz.
+    const wantCache = data.cache !== false && Boolean(env.AI_CACHE);
+    let cacheKey;
+    if (wantCache) {
+      cacheKey = 'ai:' + (await sha256Hex(JSON.stringify({ messages, maxTokens })));
+      const cached = await env.AI_CACHE.get(cacheKey);
+      if (cached) return json({ content: cached, cached: true });
+    }
 
     try {
-      const content = await runAiChain(env, messages, maxTokens, data.model);
+      // Önbellekten dönmedi → gerçek AI çağrısı olacak; kötüye kullanımı sınırla.
+      await enforceRateLimit(env, claims.sub);
+      const content = await runAiChain(env, messages, maxTokens, data.model, isVision);
+      if (wantCache && cacheKey) {
+        // Yanıtı geciktirmemek için yazmayı arka planda yap.
+        const put = env.AI_CACHE.put(cacheKey, content, { expirationTtl: CACHE_TTL_SECONDS });
+        if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(put);
+        else await put;
+      }
       return json({ content });
     } catch (e) {
       return json({ error: e.message || 'AI yanıtı alınamadı.' }, e.status || 503);

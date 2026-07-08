@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { RecipeImage } from '@/components/recipe-image';
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/screen';
 import type { Recipe } from '@/constants/mock-data';
-import { aiSuggestedRecipes } from '@/constants/mock-data';
+import { recipes as allRecipes } from '@/constants/mock-data';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { type AIContext, type GeneratedRecipe, generateRecipe, isAIEnabled } from '@/lib/ai';
@@ -16,7 +16,7 @@ import { useAiAccess } from '@/lib/ai-credits';
 import { useAuth } from '@/lib/auth-context';
 import { shareRecipe } from '@/lib/community';
 import { useDailyLog } from '@/lib/daily-log';
-import { allergenLabel, caloriesPerMeal, goalLabel } from '@/lib/plan';
+import { allergenLabel, caloriesPerMeal, goalLabel, type Goal } from '@/lib/plan';
 import { filterRecipes } from '@/lib/recipe-filter';
 import { useUserProfile } from '@/lib/user-profile';
 
@@ -40,17 +40,33 @@ function recipeReason(recipe: Recipe): Reason {
   return { icon: 'sparkles', label: 'Senin için seçildi' };
 }
 
+/**
+ * Kullanıcının hedefine göre tarif puanı — öneriler kişiye özel sıralanır.
+ * - Kilo verme: düşük kalori + yüksek protein (tokluk) öne çıkar.
+ * - Kilo alma: kalori yoğun + proteinli tarifler öne çıkar.
+ * - Koruma: dengeli (~450 kcal) ve proteinli tarifler öne çıkar.
+ */
+function scoreForGoal(r: Recipe, goal: Goal): number {
+  if (goal === 'lose') return r.protein * 2 - r.kcal / 25;
+  if (goal === 'gain') return r.kcal / 20 + r.protein;
+  return r.protein - Math.abs(450 - r.kcal) / 25;
+}
+
 export default function ChefScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { profile } = useUserProfile();
   const access = useAiAccess();
 
-  // Önerileri kullanıcının diyet/alerji tercihlerine göre süz.
+  // Önerileri kullanıcının diyet/alerji tercihlerine göre süz,
+  // hedefine (verme/alma/koruma) göre sırala ve en iyi 3'ü göster.
   const prefs = profile
     ? { diet: profile.diet, allergies: profile.allergies, dislikes: profile.dislikes }
     : null;
-  const suggestions = filterRecipes(aiSuggestedRecipes, prefs);
+  const goal: Goal = profile?.goal ?? 'maintain';
+  const suggestions = filterRecipes(allRecipes, prefs)
+    .sort((a, b) => scoreForGoal(b, goal) - scoreForGoal(a, goal))
+    .slice(0, 3);
 
   return (
     <Screen>
@@ -58,9 +74,14 @@ export default function ChefScreen() {
       <View style={styles.header}>
         <View style={styles.headerTitle}>
           <Ionicons name="sparkles" size={26} color={theme.primary} />
-          <ThemedText type="subtitle" style={{ fontSize: 28, lineHeight: 34, color: theme.primary }}>
-            AI Şef
-          </ThemedText>
+          <View>
+            <ThemedText type="subtitle" style={{ fontSize: 28, lineHeight: 32, color: theme.primary }}>
+              AI Şef
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 13 }}>
+              Sana özel tarif & plan
+            </ThemedText>
+          </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
           {/* AI kredi göstergesi */}
@@ -80,38 +101,30 @@ export default function ChefScreen() {
         </View>
       </View>
 
-      {/* AI Koç girişi */}
-      <Pressable
-        onPress={() => router.push('/coach' as Href)}
-        style={[styles.coachRow, { backgroundColor: theme.primarySoft }]}>
-        <Ionicons name="sparkles" size={18} color={theme.primaryDark} />
-        <ThemedText type="smallBold" style={{ color: theme.primaryDark, fontSize: 14, flex: 1 }}>
-          AI Koç'a sor — beslenme & hedef sohbeti
+      {/* Hızlı işlemler */}
+      <View style={{ gap: Spacing.two }}>
+        <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 13, paddingLeft: Spacing.one }}>
+          Hızlı işlemler
         </ThemedText>
-        <Ionicons name="chevron-forward" size={18} color={theme.primaryDark} />
-      </Pressable>
-
-      {/* Buzdolabını tara girişi */}
-      <Pressable
-        onPress={() => router.push('/fridge-scan' as Href)}
-        style={[styles.coachRow, { backgroundColor: theme.primarySoft }]}>
-        <Ionicons name="camera" size={18} color={theme.primaryDark} />
-        <ThemedText type="smallBold" style={{ color: theme.primaryDark, fontSize: 14, flex: 1 }}>
-          Buzdolabını tara — malzemenle sağlıklı tarif
-        </ThemedText>
-        <Ionicons name="chevron-forward" size={18} color={theme.primaryDark} />
-      </Pressable>
-
-      {/* Haftalık plan girişi */}
-      <Pressable
-        onPress={() => router.push('/meal-plan' as Href)}
-        style={[styles.coachRow, { backgroundColor: theme.backgroundElement }]}>
-        <Ionicons name="calendar" size={18} color={theme.primary} />
-        <ThemedText type="smallBold" style={{ fontSize: 14, flex: 1 }}>
-          Haftalık öğün planı oluştur
-        </ThemedText>
-        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
-      </Pressable>
+        <QuickAction
+          icon="chatbubble-ellipses"
+          title="AI Koç'a sor"
+          hint="Beslenme & hedef sohbeti"
+          onPress={() => router.push('/coach' as Href)}
+        />
+        <QuickAction
+          icon="camera"
+          title="Buzdolabını tara"
+          hint="Malzemenle sana özel sağlıklı tarif"
+          onPress={() => router.push('/fridge-scan' as Href)}
+        />
+        <QuickAction
+          icon="calendar"
+          title="Haftalık öğün planı"
+          hint="7 günlük dengeli menünü oluştur"
+          onPress={() => router.push('/meal-plan' as Href)}
+        />
+      </View>
 
       {/* AI tarif üretici */}
       <AiGenerator />
@@ -133,6 +146,42 @@ export default function ChefScreen() {
         ))}
       </View>
     </Screen>
+  );
+}
+
+/** Üst kısımdaki hızlı işlem satırı — dairesel ikon + başlık + ipucu. */
+function QuickAction({
+  icon,
+  title,
+  hint,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  hint: string;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.quickRow,
+        { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.85 : 1 },
+      ]}>
+      <View style={[styles.quickIcon, { backgroundColor: theme.primarySoft }]}>
+        <Ionicons name={icon} size={20} color={theme.primaryDark} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <ThemedText type="smallBold" style={{ fontSize: 15 }}>
+          {title}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>
+          {hint}
+        </ThemedText>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+    </Pressable>
   );
 }
 
@@ -363,22 +412,11 @@ function AiGenerator() {
   );
 }
 
-/** Tek bir AI öneri kartı — staggered giriş animasyonuyla. */
-function AiPickCard({ recipe, index }: { recipe: Recipe; index: number }) {
+/** Tek bir AI öneri kartı. */
+function AiPickCard({ recipe }: { recipe: Recipe; index?: number }) {
   const theme = useTheme();
   const router = useRouter();
   const reason = recipeReason(recipe);
-
-  // "Playful" giriş: hafif büyüyerek belirir.
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(anim, {
-      toValue: 1,
-      duration: 500,
-      delay: 120 + index * 160,
-      useNativeDriver: true,
-    }).start();
-  }, [anim, index]);
 
   const macros = [
     { label: 'Kalori', value: `${recipe.kcal}` },
@@ -388,16 +426,7 @@ function AiPickCard({ recipe, index }: { recipe: Recipe; index: number }) {
   ];
 
   return (
-    <Animated.View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.card,
-          borderColor: theme.border,
-          opacity: anim,
-          transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) }],
-        },
-      ]}>
+    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
       {/* Reason etiketi */}
       <View style={styles.cardBody}>
         <View style={[styles.reasonTag, { backgroundColor: theme.primarySoft }]}>
@@ -445,7 +474,7 @@ function AiPickCard({ recipe, index }: { recipe: Recipe; index: number }) {
           <Ionicons name="arrow-forward" size={18} color="#fff" />
         </Pressable>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -532,13 +561,21 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: Radius.pill,
   },
-  coachRow: {
+  quickRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.three,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  quickIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   aiBox: {
     borderRadius: Radius.lg,

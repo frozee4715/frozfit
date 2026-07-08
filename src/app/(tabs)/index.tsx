@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { RecipeCard } from '@/components/recipe-card';
 import { ThemedText } from '@/components/themed-text';
+import { BottomGradient } from '@/components/ui/bottom-gradient';
 import { Card } from '@/components/ui/card';
 import { Chip } from '@/components/ui/chip';
 import { PressableScale } from '@/components/ui/pressable-scale';
@@ -13,20 +14,37 @@ import { Screen } from '@/components/ui/screen';
 import { categories, userProfile } from '@/constants/mock-data';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth-context';
 import { goalLabel } from '@/lib/plan';
 import { filterRecipes } from '@/lib/recipe-filter';
 import { useRecipes } from '@/lib/recipes';
 import { useUserProfile } from '@/lib/user-profile';
+
+/** Saate göre içten bir selamlama. */
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 6) return 'İyi geceler 🌙';
+  if (h < 11) return 'Günaydın ☀️';
+  if (h < 18) return 'Merhaba 👋';
+  return 'İyi akşamlar 🌆';
+}
 
 export default function DiscoverScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { recipes } = useRecipes();
   const { profile } = useUserProfile();
+  const { user } = useAuth();
 
   const openRecipe = (recipeId: string) => router.push(`/recipe/${recipeId}` as Href);
   const [activeCategory, setActiveCategory] = useState<string>('Tümü');
   const [query, setQuery] = useState('');
+  const [profilePromptDismissed, setProfilePromptDismissed] = useState(false);
+
+  // Gerçek hesapla (Google/Apple/e-posta) girip onboarding'i atlamış kullanıcı:
+  // planı kişiselleştirmek için nazik bir hatırlatma (kapatılabilir).
+  const needsProfile =
+    !!user && !user.isAnonymous && !profile?.onboardedAt && !profilePromptDismissed;
 
   // Gerçek profil yoksa (Firebase kapalıyken) mock'a düş.
   const displayName = profile?.name || userProfile.name;
@@ -56,11 +74,14 @@ export default function DiscoverScreen() {
     <Screen>
       {/* Selamlama */}
       <View style={styles.headerRow}>
-        <View>
+        <View style={{ flex: 1, paddingRight: Spacing.two }}>
           <ThemedText type="small" themeColor="textSecondary">
-            Merhaba 👋
+            {greeting()}
           </ThemedText>
-          <ThemedText type="subtitle" style={{ fontSize: 26, lineHeight: 32 }}>
+          <ThemedText
+            type="subtitle"
+            style={{ fontSize: 30, lineHeight: 34, letterSpacing: -0.5 }}
+            numberOfLines={1}>
             {displayName}
           </ThemedText>
         </View>
@@ -85,6 +106,28 @@ export default function DiscoverScreen() {
           style={[styles.searchInput, { color: theme.text }]}
         />
       </View>
+
+      {/* Planını tamamla (onboarding'i atlayan gerçek hesaplar için) */}
+      {needsProfile && (
+        <PressableScale onPress={() => router.push('/onboarding' as Href)}>
+          <Card style={[styles.profilePrompt, { backgroundColor: theme.primarySoft }]}>
+            <View style={[styles.communityIcon, { backgroundColor: theme.primary }]}>
+              <Ionicons name="sparkles" size={20} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <ThemedText type="smallBold" style={{ fontSize: 15, color: theme.primaryDark }}>
+                Planını kişiselleştir
+              </ThemedText>
+              <ThemedText type="small" style={{ fontSize: 13, color: theme.primaryDark }}>
+                Kalori ve makro planın için birkaç kısa soru
+              </ThemedText>
+            </View>
+            <PressableScale onPress={() => setProfilePromptDismissed(true)} hitSlop={8}>
+              <Ionicons name="close" size={20} color={theme.primaryDark} />
+            </PressableScale>
+          </Card>
+        </PressableScale>
+      )}
 
       {/* Kategoriler */}
       <ScrollView
@@ -123,7 +166,7 @@ export default function DiscoverScreen() {
       {/* Günün önerisi */}
       <View style={styles.sectionHeader}>
         <ThemedText type="smallBold" style={{ fontSize: 18 }}>
-          ⭐ Günün önerisi
+          Günün önerisi
         </ThemedText>
       </View>
       {featuredRecipe && (
@@ -135,11 +178,27 @@ export default function DiscoverScreen() {
               contentFit="cover"
               transition={250}
             />
+            <BottomGradient />
+            <View style={[styles.featuredStar, { backgroundColor: 'rgba(255,255,255,0.92)' }]}>
+              <Ionicons name="star" size={12} color="#F59E0B" />
+              <ThemedText type="smallBold" style={{ fontSize: 12, color: '#0F1B15' }}>
+                Bugüne özel
+              </ThemedText>
+            </View>
             <View style={styles.featuredOverlay}>
-              <View style={[styles.featuredBadge, { backgroundColor: theme.accent }]}>
-                <ThemedText type="small" style={{ color: '#fff', fontSize: 12 }}>
-                  {featuredRecipe.kcal} kcal · {featuredRecipe.minutes} dk
-                </ThemedText>
+              <View style={styles.featuredMetaRow}>
+                <View style={styles.featuredPill}>
+                  <Ionicons name="flame" size={12} color="#FFB199" />
+                  <ThemedText type="small" style={{ color: '#fff', fontSize: 12 }}>
+                    {featuredRecipe.kcal} kcal
+                  </ThemedText>
+                </View>
+                <View style={styles.featuredPill}>
+                  <Ionicons name="time-outline" size={12} color="#fff" />
+                  <ThemedText type="small" style={{ color: '#fff', fontSize: 12 }}>
+                    {featuredRecipe.minutes} dk
+                  </ThemedText>
+                </View>
               </View>
               <ThemedText style={styles.featuredTitle}>{featuredRecipe.title}</ThemedText>
             </View>
@@ -167,9 +226,17 @@ export default function DiscoverScreen() {
       )}
 
       {filtered.length === 0 ? (
-        <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-          Bu filtreye uygun tarif bulunamadı.
-        </ThemedText>
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: theme.backgroundElement }]}>
+            <Ionicons name="search-outline" size={28} color={theme.textMuted} />
+          </View>
+          <ThemedText type="smallBold" style={{ fontSize: 16 }}>
+            Sonuç bulunamadı
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+            Farklı bir kategori seç ya da aramayı sadeleştir.
+          </ThemedText>
+        </View>
       ) : (
         <View style={{ gap: Spacing.four }}>
           {filtered.map((r) => (
@@ -230,6 +297,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.three,
   },
+  profilePrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
   communityIcon: {
     width: 44,
     height: 44,
@@ -239,7 +311,7 @@ const styles = StyleSheet.create({
   },
   featured: {
     overflow: 'hidden',
-    height: 200,
+    height: 220,
   },
   featuredImage: {
     width: '100%',
@@ -253,18 +325,49 @@ const styles = StyleSheet.create({
     right: 0,
     padding: Spacing.three,
     gap: Spacing.two,
-    backgroundColor: 'rgba(0,0,0,0.32)',
   },
-  featuredBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 3,
-    borderRadius: Radius.sm,
+  featuredStar: {
+    position: 'absolute',
+    top: Spacing.three,
+    left: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
+  },
+  featuredMetaRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  featuredPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   featuredTitle: {
     color: '#fff',
     fontSize: 22,
     fontWeight: '700',
     lineHeight: 26,
+  },
+  emptyState: {
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.five,
+    paddingHorizontal: Spacing.four,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
   },
 });

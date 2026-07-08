@@ -24,6 +24,8 @@ export const GUEST_TRIAL_DAYS = 7;
 export type UserProfile = PlanInput &
   Preferences & {
     name: string;
+    /** Profil fotoğrafı (Supabase public URL ya da yerel dosya URI'si). */
+    photoUri: string | null;
     plan: NutritionPlan;
     /** Onboarding tamamlandıysa zaman damgası (ms); aksi halde null. */
     onboardedAt: number | null;
@@ -41,6 +43,7 @@ const USERS = 'users';
 function toProfile(data: Record<string, any>): UserProfile {
   return {
     name: String(data.name ?? ''),
+    photoUri: data.photoUri ?? null,
     gender: data.gender ?? 'male',
     age: Number(data.age ?? 0),
     height: Number(data.height ?? 0),
@@ -128,9 +131,12 @@ export async function saveOnboarding(
  * Mevcut profili günceller ve planı yeniden hesaplar.
  * `onboardedAt` / `guestStartedAt` / `isGuest` alanlarına DOKUNMAZ (yalnızca onboarding bunları kurar).
  */
-export async function updateProfile(uid: string, input: OnboardingInput): Promise<void> {
+export async function updateProfile(
+  uid: string,
+  input: OnboardingInput & { photoUri?: string | null },
+): Promise<void> {
   if (!db) throw new Error('Firebase yapılandırılmamış.');
-  const { name, ...planInput } = input;
+  const { name, photoUri, ...planInput } = input;
   const plan = computePlan(planInput);
 
   await setDoc(
@@ -138,6 +144,7 @@ export async function updateProfile(uid: string, input: OnboardingInput): Promis
     {
       name,
       ...planInput,
+      ...(photoUri !== undefined ? { photoUri } : {}),
       plan,
       updatedAt: serverTimestamp(),
     },

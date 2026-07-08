@@ -66,6 +66,50 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+// ── Özel renk temaları (Premium) ────────────────────────────────────────
+// Marka rengini değiştiren aksan paletleri. 'mint' varsayılandır ve ücretsizdir;
+// diğerleri Premium aboneliğiyle açılır (bkz. settings ekranı).
+
+export type AccentKey = 'mint' | 'ocean' | 'sunset' | 'berry';
+
+type AccentOverride = Partial<
+  Record<'primary' | 'primaryDark' | 'primarySoft' | 'tabActive', string>
+>;
+
+export const Accents: Record<
+  AccentKey,
+  { label: string; swatch: string; premium: boolean; light: AccentOverride; dark: AccentOverride }
+> = {
+  mint: {
+    label: 'Mint',
+    swatch: '#12B886',
+    premium: false,
+    light: {},
+    dark: {},
+  },
+  ocean: {
+    label: 'Okyanus',
+    swatch: '#3B82F6',
+    premium: true,
+    light: { primary: '#3B82F6', primaryDark: '#2563EB', primarySoft: '#DBEAFE', tabActive: '#3B82F6' },
+    dark: { primary: '#60A5FA', primaryDark: '#3B82F6', primarySoft: '#16283F', tabActive: '#60A5FA' },
+  },
+  sunset: {
+    label: 'Gün batımı',
+    swatch: '#F97316',
+    premium: true,
+    light: { primary: '#F97316', primaryDark: '#EA580C', primarySoft: '#FFEDD5', tabActive: '#F97316' },
+    dark: { primary: '#FB923C', primaryDark: '#F97316', primarySoft: '#3A2313', tabActive: '#FB923C' },
+  },
+  berry: {
+    label: 'Böğürtlen',
+    swatch: '#A855F7',
+    premium: true,
+    light: { primary: '#A855F7', primaryDark: '#9333EA', primarySoft: '#F3E8FF', tabActive: '#A855F7' },
+    dark: { primary: '#C084FC', primaryDark: '#A855F7', primarySoft: '#2C1B3D', tabActive: '#C084FC' },
+  },
+};
+
 export const Fonts = Platform.select({
   ios: {
     sans: 'system-ui',

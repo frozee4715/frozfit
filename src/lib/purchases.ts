@@ -11,6 +11,7 @@
  *  3) .env → EXPO_PUBLIC_REVENUECAT_IOS_KEY (ve istersen ANDROID_KEY).
  *  4) Yeni bir EAS build al (Expo Go değil).
  */
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
 const RC_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY?.trim();
@@ -19,13 +20,22 @@ const RC_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY?.trim();
 /** RevenueCat'te tanımlanan entitlement kimliği. */
 export const PRO_ENTITLEMENT = 'pro';
 
-// Native modülü güvenli yükle. Expo Go'da require başarısız olabilir.
+/**
+ * Expo Go'da mıyız? RevenueCat'in JS'i Expo Go'da yüklenir ama altındaki native
+ * store yoktur; configure çağrısı "Invalid API key / native store not available"
+ * console hatası basar. Bu yüzden Expo Go'da RevenueCat'i hiç başlatmayız.
+ */
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+// Native modülü güvenli yükle. Expo Go'da JS yüklense de native yoktur → kullanma.
 let Purchases: any = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Purchases = require('react-native-purchases').default;
-} catch {
-  Purchases = null;
+if (!isExpoGo) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Purchases = require('react-native-purchases').default;
+  } catch {
+    Purchases = null;
+  }
 }
 
 export type PurchasePackage = {
@@ -34,6 +44,10 @@ export type PurchasePackage = {
   priceString: string;
   /** Ürün başlığı (App Store'dan) */
   title: string;
+  /** RevenueCat paket türü: MONTHLY, ANNUAL, LIFETIME... */
+  packageType: string;
+  /** Sayısal fiyat (indirim hesabı için). */
+  price: number;
   /** Ham paket nesnesi (purchasePackage'a verilir) */
   raw: any;
 };
@@ -51,7 +65,12 @@ let configured = false;
 
 /** RevenueCat'i bir kez yapılandırır. appUserId = Firebase uid (önerilir). */
 export async function configurePurchases(appUserId?: string): Promise<void> {
-  if (!isPurchasesSupported() || configured) return;
+  if (!isPurchasesSupported()) return;
+  if (configured) {
+    // Zaten yapılandırıldıysa yalnızca kullanıcı kimliğini eşitle (uid sonradan gelebilir).
+    if (appUserId) await loginPurchases(appUserId);
+    return;
+  }
   try {
     Purchases.configure({ apiKey: platformKey()!, appUserID: appUserId ?? null });
     configured = true;
@@ -92,19 +111,51 @@ export function addCustomerInfoListener(cb: (info: any) => void): () => void {
   }
 }
 
-/** Aktif offering'in paketlerini döndürür (boş = yok/desteklenmiyor). */
+/** getProPackages'in son çağrısındaki hata mesajı (arayüzde teşhis için). */
+export let lastPackagesError: string | null = null;
+
+/**
+ * Aktif offering'in paketlerini döndürür (boş = yok/desteklenmiyor).
+ *
+ * Not: RevenueCat panelinde "Current" offering işaretlenmemişse `offerings.current`
+ * null gelir ve paketler hiç yüklenmez ("Paket yükleniyor"da kalma sebebi).
+ * Bu durumda tüm offering'ler taranır, ilk dolu olan kullanılır.
+ */
 export async function getProPackages(): Promise<PurchasePackage[]> {
-  if (!isPurchasesSupported() || !configured) return [];
+  if (!isPurchasesSupported() || !configured) {
+    lastPackagesError = !Purchases
+      ? 'native_module_missing'
+      : !platformKey()
+        ? 'api_key_missing'
+        : 'not_configured';
+    return [];
+  }
   try {
     const offerings = await Purchases.getOfferings();
-    const pkgs = offerings?.current?.availablePackages ?? [];
+    let pkgs: any[] = offerings?.current?.availablePackages ?? [];
+    if (pkgs.length === 0 && offerings?.all) {
+      for (const key of Object.keys(offerings.all)) {
+        const candidate = offerings.all[key]?.availablePackages ?? [];
+        if (candidate.length > 0) {
+          pkgs = candidate;
+          break;
+        }
+      }
+    }
+    lastPackagesError =
+      pkgs.length === 0
+        ? 'RevenueCat offering boş. Panelde offering + paketleri ve App Store Connect ürün onayını kontrol et.'
+        : null;
     return pkgs.map((p: any) => ({
       identifier: p.identifier,
       priceString: p.product?.priceString ?? '',
       title: p.product?.title ?? 'FrozFit Premium',
+      packageType: p.packageType ?? '',
+      price: p.product?.price ?? 0,
       raw: p,
     }));
-  } catch {
+  } catch (e: any) {
+    lastPackagesError = e?.message ?? 'offerings_failed';
     return [];
   }
 }

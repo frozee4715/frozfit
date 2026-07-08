@@ -22,6 +22,7 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
           backgroundColor: selected ? theme.primary : theme.backgroundElement,
           borderColor: selected ? theme.primary : theme.border,
         },
+        selected && styles.chipSelected,
       ]}>
       <ThemedText
         type="smallBold"
@@ -38,5 +39,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  chipSelected: {
+    shadowColor: '#12B886',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
 });

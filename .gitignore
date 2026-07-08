@@ -38,6 +38,9 @@ yarn-error.*
 .wrangler/
 .dev.vars
 
+# Firebase admin hizmet hesabı anahtarı (GİZLİ — asla commit etme)
+**/serviceAccountKey.json
+
 # typescript
 *.tsbuildinfo
 
