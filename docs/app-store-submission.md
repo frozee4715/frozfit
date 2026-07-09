@@ -77,9 +77,9 @@ FrozFit bir sağlık/beslenme bilgilendirme aracıdır, tıbbi tavsiye yerine ge
 kalori,diyet,beslenme,fitness,antrenman,kilo,protein,makro,tarif,egzersiz,su,ai koç,sağlık
 ```
 
-### What's New in This Version (Sürüm 1.0.0 notu)
+### What's New in This Version (Sürüm 1.0.0 notu — kısa, 170 kr altı)
 ```
-FrozFit'e hoş geldin! İlk sürümümüzde: yapay zekâ şef, fotoğraftan kalori tahmini, buzdolabı tarama, kalori & makro takibi, antrenman ve topluluk. Geri bildirimlerini bekliyoruz.
+Yapay zekâ şef, fotoğraftan kalori tahmini, kalori & makro takibi, antrenman ve topluluk. FrozFit ile hedefine ulaş!
 ```
 
 ---
