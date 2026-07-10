@@ -66,6 +66,9 @@ function RootNavigator() {
   // Root navigator mount olmadan router.replace çağırmak "not handled by any
   // navigator" hatası verir; key gelene kadar yönlendirmeyi bekletiyoruz.
   const navState = useRootNavigationState();
+  // Ekran geçişlerinde altta koyu/siyah bir yüzey görünmesin diye her ekrana
+  // tema arka planı verilir (react-native-screens siyah-ekran hatasına karşı).
+  const colors = Colors[useResolvedScheme()];
 
   const ready = configured ? !authLoading && !profileLoading : true;
 
@@ -130,6 +133,7 @@ function RootNavigator() {
           animation: 'slide_from_right',
           animationDuration: 260,
           gestureEnabled: true,
+          contentStyle: { backgroundColor: colors.background },
         }}>
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         <Stack.Screen name="welcome" options={{ animation: 'fade' }} />

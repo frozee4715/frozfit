@@ -10,7 +10,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        animation: 'shift',
+        // 'shift' animasyonu New Architecture + Reanimated'da sekme içeriğini
+        // bazen boş (siyah/beyaz) bırakıyordu; kararlı geçiş için animasyon yok.
+        animation: 'none',
       }}
       tabBar={(props) => <FloatingTabBar {...props} />}>
       <Tabs.Screen name="index" options={{ title: t('tab.discover') }} />

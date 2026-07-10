@@ -36,7 +36,7 @@ export function Screen({ children, scroll = true, contentStyle }: ScreenProps) {
   if (scroll) {
     return (
       <ScrollView
-        style={{ backgroundColor: theme.background }}
+        style={{ flex: 1, backgroundColor: theme.background }}
         contentContainerStyle={[padding, contentStyle]}
         showsVerticalScrollIndicator={false}>
         {inner}
