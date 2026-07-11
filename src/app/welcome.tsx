@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, type DimensionValue, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   FadeIn,
   FadeInDown,
   FadeInUp,
@@ -65,9 +66,13 @@ export default function WelcomeScreen() {
   const showGoogle = isGoogleSignInSupported();
 
   // Merkezdeki rozetin yumuşak "nefes alan" salınımı (bir kez başlatılır).
+  // Sonsuz (-1) tekrar, unmount'ta MUTLAKA iptal edilmeli: aksi halde UI runtime
+  // ekran gittikten sonra da shared value'ya yazmayı sürdürür ve Hermes heap'ini
+  // bozar (GC write barrier'ında SIGSEGV).
   const bob = useSharedValue(0);
   useEffect(() => {
     bob.value = withRepeat(withTiming(1, { duration: 2200 }), -1, true);
+    return () => cancelAnimation(bob);
   }, [bob]);
   const badgeStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: -6 + bob.value * -6 }],
