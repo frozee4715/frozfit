@@ -134,7 +134,10 @@ export async function commit(env, writes) {
 
   if (!res.ok) {
     const body = await res.text();
-    if (res.status === 400 && /already exists|FAILED_PRECONDITION/i.test(body)) {
+    // Firestore, `currentDocument.exists=false` kısıtı ihlal edilince
+    // 409 ALREADY_EXISTS döner (400 değil — ölçtük). Yarış koşulunda ikinci
+    // isteğin düştüğü yer burasıdır ve kullanıcıya anlamlı mesaj dönmesi gerekir.
+    if (res.status === 409 || /ALREADY_EXISTS|already exists|FAILED_PRECONDITION/i.test(body)) {
       const err = new Error('conflict');
       err.conflict = true;
       throw err;
