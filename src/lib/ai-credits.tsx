@@ -19,7 +19,15 @@ import { db } from '@/lib/firebase';
 import { usePremium } from '@/lib/premium';
 
 export const START_CREDITS = 5;
-export const MAX_CREDITS = 60;
+
+/**
+ * `setCredits` bu değere kırpar. DAVET SİSTEMİ YÜZÜNDEN YÜKSEK TUTULUYOR:
+ * sunucu davet ödülü olarak kredi ekleyebiliyor (20 davet × 10 = 200+), ve kırpma
+ * tavanı bunun altında kalırsa kullanıcı ilk harcamada kazandığı kredileri
+ * KAYBEDER (setCredits(204) → 60 yazardı). Kırpma yalnızca saçma değerlere karşı
+ * bir emniyet; gerçek koruma Firestore kuralında (istemci krediyi artıramaz).
+ */
+export const MAX_CREDITS = 500;
 
 type CreditsContextValue = {
   credits: number;

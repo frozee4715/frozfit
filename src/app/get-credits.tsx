@@ -44,6 +44,26 @@ export default function GetCreditsScreen() {
           </ThemedText>
         </View>
 
+        {/* Ücretsiz kredi kazanmanın tek yolu: arkadaş davet etmek. Kredi ekranı
+            bunun için en doğru yer — kullanıcı buraya zaten "kredi lazım" diye
+            geliyor ve bu, uygulamanın tek organik büyüme kanalı. */}
+        <Pressable onPress={() => router.push('/invite' as Href)}>
+          <Card style={styles.inviteCard}>
+            <View style={[styles.icon, { backgroundColor: theme.primarySoft }]}>
+              <Ionicons name="gift" size={20} color={theme.primaryDark} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <ThemedText type="smallBold" style={{ fontSize: 16 }}>
+                Arkadaşını davet et, 10 kredi kazan
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 12 }}>
+                Kodunu kullanan her arkadaş için ikiniz de kredi kazanın.
+              </ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+          </Card>
+        </Pressable>
+
         {isPremium ? (
           <Card style={[styles.activeCard, { backgroundColor: theme.primarySoft }]}>
             <Ionicons name="star" size={22} color={theme.primaryDark} />
@@ -123,6 +143,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   proCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  inviteCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,

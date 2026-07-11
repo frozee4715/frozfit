@@ -48,6 +48,10 @@ const SETTING_SECTIONS: { titleKey: string; items: SettingItem[] }[] = [
     items: [{ icon: 'heart-outline', labelKey: 'profile.favorites', route: '/favorites' as Href }],
   },
   {
+    titleKey: 'profile.section.invite',
+    items: [{ icon: 'gift-outline', labelKey: 'profile.invite', route: '/invite' as Href }],
+  },
+  {
     titleKey: 'profile.section.app',
     items: [
       { icon: 'settings-outline', labelKey: 'profile.settings', route: '/settings' as Href },

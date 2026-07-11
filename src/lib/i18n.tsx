@@ -52,6 +52,7 @@ const tr: Dict = {
   'profile.challenges': 'Haftalık meydan okumalar',
   'profile.leaderboard': 'Liderlik tablosu',
   'profile.favorites': 'Kaydedilen tarifler',
+  'profile.invite': 'Arkadaşını davet et',
   'profile.history': 'Takip geçmişi',
   'profile.settings': 'Ayarlar',
   'profile.notifications': 'Bildirimler',
@@ -63,6 +64,7 @@ const tr: Dict = {
   'profile.section.plan': 'Hedef & Plan',
   'profile.section.progress': 'İlerleme & Başarılar',
   'profile.section.recipes': 'Tarifler',
+  'profile.section.invite': 'Davet',
   'profile.section.app': 'Uygulama',
 
   // Premium
@@ -110,6 +112,7 @@ const en: Dict = {
   'profile.challenges': 'Weekly challenges',
   'profile.leaderboard': 'Leaderboard',
   'profile.favorites': 'Saved recipes',
+  'profile.invite': 'Invite a friend',
   'profile.history': 'Tracking history',
   'profile.settings': 'Settings',
   'profile.notifications': 'Notifications',
@@ -121,6 +124,7 @@ const en: Dict = {
   'profile.section.plan': 'Goal & Plan',
   'profile.section.progress': 'Progress & Achievements',
   'profile.section.recipes': 'Recipes',
+  'profile.section.invite': 'Invite',
   'profile.section.app': 'App',
 
   // Premium

@@ -18,6 +18,8 @@
  *   OPENROUTER_API_KEY   (secret)
  */
 
+import { claimCode, getOrCreateCode } from './referral.js';
+
 // ── OpenRouter ──────────────────────────────────────────────────────────────
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 // Metin işleri (tarif/koç/plan/öneri) kısa JSON veya kısa sohbet; flash-lite bunlar
@@ -418,6 +420,24 @@ export default {
       data = await request.json();
     } catch {
       return json({ error: 'Geçersiz istek gövdesi.' }, 400);
+    }
+
+    // ── Davet uçları ────────────────────────────────────────────────────────
+    // AI ile aynı Worker'da: kimlik doğrulaması ve secret'lar zaten burada.
+    const path = new URL(request.url).pathname;
+    if (path === '/referral/code' || path === '/referral/claim') {
+      if (!env.FIREBASE_SERVICE_ACCOUNT) {
+        return json({ error: 'Davet sistemi sunucuda yapılandırılmamış.' }, 503);
+      }
+      try {
+        const result =
+          path === '/referral/code'
+            ? await getOrCreateCode(env, claims.sub)
+            : await claimCode(env, claims.sub, data.code);
+        return json(result);
+      } catch (e) {
+        return json({ error: e.message || 'İşlem tamamlanamadı.' }, e.status || 503);
+      }
     }
 
     const messages = data && data.messages;
