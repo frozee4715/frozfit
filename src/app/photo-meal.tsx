@@ -14,6 +14,7 @@ import { type AIContext, type FoodEstimate, analyzeFoodPhoto } from '@/lib/ai';
 import { useAccountGate } from '@/lib/account-gate';
 import { useAiAccess } from '@/lib/ai-credits';
 import { MEAL_TYPES, type MealType, useDailyLog } from '@/lib/daily-log';
+import { prepareImageForAI } from '@/lib/image';
 import { allergenLabel, goalLabel } from '@/lib/plan';
 import { useUserProfile } from '@/lib/user-profile';
 
@@ -37,13 +38,13 @@ export default function PhotoMealScreen() {
     ? { diet: profile.diet, allergies: profile.allergies.map(allergenLabel), goal: goalLabel(profile.goal) }
     : undefined;
 
-  const analyze = async (base64: string, uri: string) => {
+  const analyze = async (uri: string, width?: number) => {
     setImageUri(uri);
     setEstimate(null);
     setError(null);
     setLoading(true);
     try {
-      const result = await analyzeFoodPhoto(`data:image/jpeg;base64,${base64}`, ctx);
+      const result = await analyzeFoodPhoto(await prepareImageForAI(uri, width), ctx);
       // Model yemek bulamadıysa (kcal 0) tahmini gösterme, uyar.
       if (result.kcal <= 0) {
         setError('Fotoğrafta yemek algılanamadı. Yemeğin net göründüğü bir fotoğraf dene.');
@@ -72,13 +73,16 @@ export default function PhotoMealScreen() {
       setError('İzin verilmedi.');
       return;
     }
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], base64: true, quality: 0.4 };
+    // base64'ü picker'dan istemiyoruz: görsel önce küçültülüp sonra kodlanıyor
+    // (bkz. prepareImageForAI) — ham fotoğrafın base64'ü hem bellek hem token israfı.
+    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7 };
     const res =
       from === 'camera'
         ? await ImagePicker.launchCameraAsync(opts)
         : await ImagePicker.launchImageLibraryAsync(opts);
-    if (!res.canceled && res.assets[0]?.base64) {
-      analyze(res.assets[0].base64, res.assets[0].uri);
+    const asset = res.canceled ? null : res.assets[0];
+    if (asset?.uri) {
+      analyze(asset.uri, asset.width);
     }
   };
 

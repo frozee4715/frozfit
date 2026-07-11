@@ -23,6 +23,7 @@ import { useAiAccess } from '@/lib/ai-credits';
 import { useAuth } from '@/lib/auth-context';
 import { shareRecipe } from '@/lib/community';
 import { MEAL_TYPES, type MealType, useDailyLog } from '@/lib/daily-log';
+import { prepareImageForAI } from '@/lib/image';
 import { allergenLabel, caloriesPerMeal, goalLabel } from '@/lib/plan';
 import { useUserProfile } from '@/lib/user-profile';
 
@@ -97,18 +98,21 @@ export default function FridgeScanScreen() {
       setError('İzin verilmedi.');
       return;
     }
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], base64: true, quality: 0.4 };
+    // base64'ü picker'dan istemiyoruz: görsel önce küçültülüp sonra kodlanıyor
+    // (bkz. prepareImageForAI) — ham fotoğrafın base64'ü hem bellek hem token israfı.
+    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7 };
     const res =
       from === 'camera'
         ? await ImagePicker.launchCameraAsync(opts)
         : await ImagePicker.launchImageLibraryAsync(opts);
-    if (res.canceled || !res.assets[0]?.base64) return;
+    const asset = res.canceled ? null : res.assets[0];
+    if (!asset?.uri) return;
 
-    setImageUri(res.assets[0].uri);
+    setImageUri(asset.uri);
     setLoading(true);
     setError(null);
     try {
-      const found = await detectFridgeIngredients(`data:image/jpeg;base64,${res.assets[0].base64}`);
+      const found = await detectFridgeIngredients(await prepareImageForAI(asset.uri, asset.width));
       if (found.length === 0) {
         setError('Fotoğrafta malzeme algılanamadı. Malzemelerin net göründüğü bir fotoğraf dene.');
       } else {

@@ -20,9 +20,12 @@
 
 // ── OpenRouter ──────────────────────────────────────────────────────────────
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = 'google/gemini-2.5-flash';
+// Metin işleri (tarif/koç/plan/öneri) kısa JSON veya kısa sohbet; flash-lite bunlar
+// için yeterli ve flash'a göre ~6 kat ucuz (0,10$/0,40$ vs 0,30$/2,50$ per 1M).
+const DEFAULT_MODEL = 'google/gemini-2.5-flash-lite';
 // Metin (tarif/koç/plan) yedek zinciri — Gemini dolduğunda sırayla denenir.
 const FALLBACK_MODELS = [
+  'google/gemini-2.5-flash-lite',
   'google/gemini-2.5-flash',
   'deepseek/deepseek-chat',
 ];
@@ -39,25 +42,45 @@ const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
 // atlayan kötüye kullanımı (cüzdan-DoS) sınırlamak. KV nihai-tutarlı olduğundan
 // katı bir kilit değil, ama maliyet tavanı için yeterli. Yalnızca gerçek AI
 // çağrısında (önbellek ISKA) sayılır → önbellekten dönenler ücretsiz sayılmaz.
+//
+// Limit ÇAĞRI değil BİRİM sayar: bütün çağrılar aynı maliyette değil. Haftalık
+// öğün planı 4000 çıktı token'ı ister; bir tarif/fotoğraf çağrısının birkaç katı
+// tutar. Ağırlıklandırmazsak Pro bir kullanıcı günde 25 plan isteyip abonelik
+// ücretinden fazla token yakabilir. Normal kullanıcı günde 3-5 birimde kalır.
 const RL_PER_MINUTE = 10;
-const RL_PER_DAY = 60;
+const RL_PER_DAY = 25;
+
+/** İsteğin kaç limit birimi yakacağı — çıktı bütçesi büyüdükçe pahalanır. */
+function requestCost(maxTokens) {
+  return maxTokens >= 3000 ? 4 : 1;
+}
 
 /** uid için dakikalık + günlük limiti aşarsa 429 fırlatır. KV yoksa sessiz geçer. */
-async function enforceRateLimit(env, uid) {
+async function enforceRateLimit(env, uid, cost) {
   if (!env.AI_CACHE) return;
   const now = Date.now();
   const windows = [
-    { key: `rl:m:${uid}:${Math.floor(now / 60000)}`, limit: RL_PER_MINUTE, ttl: 120 },
-    { key: `rl:d:${uid}:${Math.floor(now / 86400000)}`, limit: RL_PER_DAY, ttl: 90000 },
+    {
+      key: `rl:m:${uid}:${Math.floor(now / 60000)}`,
+      limit: RL_PER_MINUTE,
+      ttl: 120,
+      msg: 'Çok hızlı gidiyorsun. Lütfen biraz sonra tekrar dene.',
+    },
+    {
+      key: `rl:d:${uid}:${Math.floor(now / 86400000)}`,
+      limit: RL_PER_DAY,
+      ttl: 90000,
+      msg: 'Günlük AI kullanım sınırına ulaştın. Yarın tekrar dene.',
+    },
   ];
   for (const w of windows) {
     const count = parseInt((await env.AI_CACHE.get(w.key)) || '0', 10);
-    if (count >= w.limit) {
-      const err = new Error('Çok hızlı gidiyorsun. Lütfen biraz sonra tekrar dene.');
+    if (count + cost > w.limit) {
+      const err = new Error(w.msg);
       err.status = 429;
       throw err;
     }
-    w.next = count + 1;
+    w.next = count + cost;
   }
   await Promise.all(
     windows.map((w) => env.AI_CACHE.put(w.key, String(w.next), { expirationTtl: w.ttl })),
@@ -66,7 +89,10 @@ async function enforceRateLimit(env, uid) {
 
 // ── Gemini ────────────────────────────────────────────────────────────────
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_MODEL = 'gemini-2.5-flash';
+// Görselde (tabak/buzdolabı) tanıma kalitesi önemli → flash. Metinde flash-lite
+// yeterli ve çok daha ucuz. Model seçimi isteğin görsel içerip içermemesine bağlı.
+const GEMINI_VISION_MODEL = 'gemini-2.5-flash';
+const GEMINI_TEXT_MODEL = 'gemini-2.5-flash-lite';
 
 const TIMEOUT_MS = 45000;
 const MAX_OUTPUT_TOKENS = 4000;
@@ -221,7 +247,8 @@ function toGemini(messages) {
 }
 
 /** Gemini API'ye istek atar. Başarısızsa retryable bilgisiyle fırlatır. */
-async function callGemini(apiKey, messages, maxTokens) {
+async function callGemini(apiKey, messages, maxTokens, isVision) {
+  const model = isVision ? GEMINI_VISION_MODEL : GEMINI_TEXT_MODEL;
   const { systemInstruction, contents } = toGemini(messages);
   // ÖNEMLİ: gemini-2.5-flash bir "düşünme" (thinking) modelidir. thinkingConfig
   // olmadan çıktı bütçesinin (maxOutputTokens) büyük kısmını görünmez düşünme
@@ -234,7 +261,7 @@ async function callGemini(apiKey, messages, maxTokens) {
   };
   if (systemInstruction) body.systemInstruction = systemInstruction;
 
-  const res = await fetchWithTimeout(`${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
+  const res = await fetchWithTimeout(`${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -309,7 +336,7 @@ async function runAiChain(env, messages, maxTokens, requestedModel, isVision) {
   // 1) Gemini (ücretsiz katman) — birincil.
   if (geminiKey) {
     try {
-      return await callGemini(geminiKey, messages, maxTokens);
+      return await callGemini(geminiKey, messages, maxTokens, isVision);
     } catch (e) {
       if (e && e.retryable === false) {
         if (!openRouterKey) {
@@ -409,7 +436,7 @@ export default {
 
     try {
       // Önbellekten dönmedi → gerçek AI çağrısı olacak; kötüye kullanımı sınırla.
-      await enforceRateLimit(env, claims.sub);
+      await enforceRateLimit(env, claims.sub, requestCost(maxTokens));
       const content = await runAiChain(env, messages, maxTokens, data.model, isVision);
       if (wantCache && cacheKey) {
         // Yanıtı geciktirmemek için yazmayı arka planda yap.

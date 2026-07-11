@@ -19,6 +19,7 @@
     "expo-font": "~14.0.12",
     "expo-glass-effect": "~0.1.10",
     "expo-image": "~3.0.11",
+    "expo-image-manipulator": "~14.0.8",
     "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.12",
     "expo-notifications": "~0.32.17",
@@ -46,6 +47,8 @@
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "@types/react": "~19.1.10",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~10.0.0",
     "sharp": "^0.35.3",
     "typescript": "~5.9.2"
   },
