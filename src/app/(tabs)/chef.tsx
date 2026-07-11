@@ -44,11 +44,13 @@ function recipeReason(recipe: Recipe): Reason {
  * Kullanıcının hedefine göre tarif puanı — öneriler kişiye özel sıralanır.
  * - Kilo verme: düşük kalori + yüksek protein (tokluk) öne çıkar.
  * - Kilo alma: kalori yoğun + proteinli tarifler öne çıkar.
+ * - Kas geliştirme: protein her şeyden önce gelir, kalori ikinci planda destekler.
  * - Koruma: dengeli (~450 kcal) ve proteinli tarifler öne çıkar.
  */
 function scoreForGoal(r: Recipe, goal: Goal): number {
   if (goal === 'lose') return r.protein * 2 - r.kcal / 25;
   if (goal === 'gain') return r.kcal / 20 + r.protein;
+  if (goal === 'muscle') return r.protein * 3 + r.kcal / 40;
   return r.protein - Math.abs(450 - r.kcal) / 25;
 }
 

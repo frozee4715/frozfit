@@ -10,7 +10,7 @@
  */
 
 export type Gender = 'male' | 'female';
-export type Goal = 'lose' | 'maintain' | 'gain';
+export type Goal = 'lose' | 'maintain' | 'gain' | 'muscle';
 export type Activity = 'sedentary' | 'light' | 'moderate' | 'active';
 export type Diet = 'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian';
 export type AllergenKey = 'gluten' | 'lactose' | 'nuts' | 'egg' | 'seafood' | 'soy';
@@ -93,6 +93,16 @@ const GOAL_ADJUST: Record<Goal, number> = {
   lose: -500,
   maintain: 0,
   gain: 350,
+  // Temiz kütle (lean bulk): fazlayı küçük tut ki kilo kas olarak gelsin.
+  muscle: 300,
+};
+
+/** Günlük protein hedefi (g/kg) — kas geliştirmede hipertrofi aralığının üstü. */
+const PROTEIN_PER_KG: Record<Goal, number> = {
+  lose: 1.8,
+  maintain: 1.8,
+  gain: 1.8,
+  muscle: 2.2,
 };
 
 const round = (n: number) => Math.round(n);
@@ -110,7 +120,7 @@ export function computePlan(input: PlanInput): NutritionPlan {
   const calorieGoal = Math.max(1200, round(tdee + GOAL_ADJUST[goal]));
 
   // Makrolar: protein vücut ağırlığına göre, yağ kaloriden %25, kalanı karbonhidrat
-  const protein = round(weight * 1.8);
+  const protein = round(weight * PROTEIN_PER_KG[goal]);
   const fat = round((calorieGoal * 0.25) / 9);
   const carbs = Math.max(0, round((calorieGoal - protein * 4 - fat * 9) / 4));
 
@@ -126,6 +136,9 @@ const GOAL_LABEL: Record<Goal, string> = {
   lose: 'Kilo verme',
   maintain: 'Formu koruma',
   gain: 'Kilo alma',
+  // AI istemlerine de bu etiket gidiyor — "beden geliştirme" demek, şefin ve
+  // koçun tariflerini/tavsiyelerini hipertrofi odaklı kurmasını sağlar.
+  muscle: 'Kas geliştirme (beden geliştirme)',
 };
 
 export function goalLabel(goal: Goal): string {
@@ -159,6 +172,13 @@ export function buildSuggestions(
   } else if (goal === 'gain') {
     tips.push('Kas için kalori fazlasını yavaş tut; ağırlık antrenmanıyla birleştir.');
     tips.push(`Günde ${plan.protein} g proteini öğünlere yayarak almaya çalış.`);
+  } else if (goal === 'muscle') {
+    tips.push('Beden geliştirme modu: +300 kcal temiz fazla — kilo kas olarak gelsin, yağ değil.');
+    tips.push(
+      `Protein hedefin yüksek tutuldu: günde ${plan.protein} g (2,2 g/kg). Öğün başına 30-40 g'a böl.`,
+    );
+    tips.push('Antrenman sonrası 2 saat içinde protein + karbonhidrat içeren bir öğün ye.');
+    tips.push('Kalori fazlası ancak haftada 3+ direnç antrenmanıyla kasa dönüşür; antrenmansız haftada fazlayı azalt.');
   } else {
     tips.push('Formunu korumak için kaloriyi dengede tut, haftalık tartı takibini sürdür.');
   }

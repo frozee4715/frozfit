@@ -94,7 +94,8 @@ export default function ProfileScreen() {
 
   // Hedefe ilerleme oranı (hedef yönüne duyarlı).
   const total = Math.abs(startWeight - targetWeight) || 1;
-  const moved = profile?.goal === 'gain' ? currentWeight - startWeight : startWeight - currentWeight;
+  const gainingGoal = profile?.goal === 'gain' || profile?.goal === 'muscle';
+  const moved = gainingGoal ? currentWeight - startWeight : startWeight - currentWeight;
   const progress = Math.max(0, Math.min(1, moved / total));
 
   // Kilo trendi grafiği için son 7 tartım (gün/ay etiketli).

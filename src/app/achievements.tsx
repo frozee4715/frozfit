@@ -36,7 +36,9 @@ export default function AchievementsScreen() {
   const targetW = profile?.targetWeight ?? 0;
   const currentW = latest?.weight ?? startW;
   const total = Math.abs(startW - targetW) || 1;
-  const moved = profile?.goal === 'gain' ? currentW - startW : startW - currentW;
+  // Kilo alma ve kas geliştirme hedeflerinde ilerleme "yukarı" yöndedir
+  const gainingGoal = profile?.goal === 'gain' || profile?.goal === 'muscle';
+  const moved = gainingGoal ? currentW - startW : startW - currentW;
   const weightProgress = Math.max(0, Math.min(1, moved / total));
 
   const badges: Badge[] = [

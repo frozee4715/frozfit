@@ -37,6 +37,7 @@ const GOALS: { value: Goal; label: string; icon: any }[] = [
   { value: 'lose', label: 'Kilo ver', icon: 'trending-down-outline' },
   { value: 'maintain', label: 'Koru', icon: 'remove-outline' },
   { value: 'gain', label: 'Kilo al', icon: 'trending-up-outline' },
+  { value: 'muscle', label: 'Kas yap', icon: 'barbell-outline' },
 ];
 
 const ACTIVITIES: { value: Activity; label: string; hint: string }[] = [
