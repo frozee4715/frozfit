@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,7 @@ import { useAiAccess } from '@/lib/ai-credits';
 import { MEAL_TYPES, type MealType, useDailyLog } from '@/lib/daily-log';
 import { prepareImageForAI } from '@/lib/image';
 import { allergenLabel, goalLabel } from '@/lib/plan';
+import { shareView } from '@/lib/share';
 import { useUserProfile } from '@/lib/user-profile';
 
 export default function PhotoMealScreen() {
@@ -33,6 +34,12 @@ export default function PhotoMealScreen() {
   const [estimate, setEstimate] = useState<FoodEstimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mealType, setMealType] = useState<MealType>((meal as MealType) || 'snack');
+
+  // Paylaşılacak görsel, ekrandaki tarama çerçevesinin ta kendisi (fotoğraf +
+  // makro baloncukları + marka izi). Ayrı bir kart çizmek yerine görüneni
+  // yakalıyoruz: kullanıcı ne paylaşacağını birebir görüyor.
+  const cardRef = useRef<View>(null);
+  const [sharing, setSharing] = useState(false);
 
   const ctx: AIContext | undefined = profile
     ? { diet: profile.diet, allergies: profile.allergies.map(allergenLabel), goal: goalLabel(profile.goal) }
@@ -83,6 +90,18 @@ export default function PhotoMealScreen() {
     const asset = res.canceled ? null : res.assets[0];
     if (asset?.uri) {
       analyze(asset.uri, asset.width);
+    }
+  };
+
+  const share = async () => {
+    setError(null);
+    setSharing(true);
+    try {
+      await shareView(cardRef.current, 'Öğününü paylaş');
+    } catch (e: any) {
+      setError(e?.message ?? 'Paylaşılamadı.');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -139,7 +158,9 @@ export default function PhotoMealScreen() {
         </View>
 
         {imageUri && (
-          <View style={styles.scanFrame}>
+          // collapsable={false}: Android'de yakalanabilmesi için görünüm ağaçta
+          // gerçek bir node olarak kalmalı.
+          <View ref={cardRef} collapsable={false} style={styles.scanFrame}>
             <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" />
 
             {/* Köşe çerçeveleri (tarama görünümü) */}
@@ -172,6 +193,19 @@ export default function PhotoMealScreen() {
                 </View>
                 <View style={[styles.pos, styles.posBottom]}>
                   <Bubble value={`${estimate.carbs}`} unit="g" label="Karb" color={theme.carbs} />
+                </View>
+
+                {/* Marka izi: bu görsel WhatsApp/Instagram'a gittiğinde onu gören
+                    herkes için uygulamanın giriş kapısı. Organik kazanımın tamamı
+                    buradan geçiyor, o yüzden silme. */}
+                <View style={styles.watermark}>
+                  <Ionicons name="leaf" size={12} color="#fff" />
+                  <ThemedText type="smallBold" style={{ fontSize: 12, color: '#fff' }}>
+                    FrozFit
+                  </ThemedText>
+                  <ThemedText type="small" style={{ fontSize: 11, color: '#fff', opacity: 0.75 }}>
+                    frozfit.app
+                  </ThemedText>
                 </View>
               </>
             )}
@@ -218,12 +252,25 @@ export default function PhotoMealScreen() {
               })}
             </View>
 
-            <Pressable onPress={add} style={[styles.addBtn, { backgroundColor: theme.primary }]}>
-              <Ionicons name="add" size={20} color="#fff" />
-              <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 16 }}>
-                Güne ekle
-              </ThemedText>
-            </Pressable>
+            <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+              <Pressable onPress={add} style={[styles.addBtn, { flex: 1, backgroundColor: theme.primary }]}>
+                <Ionicons name="add" size={20} color="#fff" />
+                <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 16 }}>
+                  Güne ekle
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                onPress={share}
+                disabled={sharing}
+                style={[styles.shareBtn, { borderColor: theme.border, opacity: sharing ? 0.6 : 1 }]}>
+                {sharing ? (
+                  <ActivityIndicator color={theme.text} />
+                ) : (
+                  <Ionicons name="share-social-outline" size={20} color={theme.text} />
+                )}
+              </Pressable>
+            </View>
 
             <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 12 }}>
               Not: Bu yapay zekâ tahminidir, kesin değildir. Gerekirse değeri elle düzeltebilirsin.
@@ -332,6 +379,28 @@ const styles = StyleSheet.create({
   bubbleBig: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  // Sol altta, köşe işaretinin (bottom:14, 28px) üstünde ve orta-alt karb
+  // baloncuğunun solunda kalacak şekilde konumlanır — hiçbiriyle çakışmaz.
+  watermark: {
+    position: 'absolute',
+    left: 14,
+    bottom: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  shareBtn: {
+    width: 54,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   pos: { position: 'absolute' },
   posTop: { top: 22, left: 0, right: 0, alignItems: 'center' },
