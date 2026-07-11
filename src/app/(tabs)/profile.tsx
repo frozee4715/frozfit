@@ -185,7 +185,7 @@ export default function ProfileScreen() {
                 FrozFit Premium
               </ThemedText>
               <ThemedText type="small" style={{ fontSize: 12, color: '#fff', opacity: 0.9 }}>
-                Sınırsız AI, özel plan ve daha fazlası
+                Günde 40 AI işlemi, özel plan ve daha fazlası
               </ThemedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#fff" />

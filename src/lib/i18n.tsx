@@ -67,7 +67,7 @@ const tr: Dict = {
 
   // Premium
   'premium.title': 'FrozFit Premium',
-  'premium.subtitle': 'Sınırsız AI, özel plan ve daha fazlası',
+  'premium.subtitle': 'Günde 40 AI işlemi, özel plan ve daha fazlası',
   'premium.cta': 'Premium’a geç',
   'premium.active': 'FrozFit Premium aktif 🎉',
 };
@@ -125,7 +125,7 @@ const en: Dict = {
 
   // Premium
   'premium.title': 'FrozFit Premium',
-  'premium.subtitle': 'Unlimited AI, custom plans and more',
+  'premium.subtitle': '40 AI actions per day, custom plans and more',
   'premium.cta': 'Go Premium',
   'premium.active': 'FrozFit Premium active 🎉',
 };

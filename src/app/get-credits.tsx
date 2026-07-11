@@ -36,7 +36,7 @@ export default function GetCreditsScreen() {
           <View style={[styles.creditPill, { backgroundColor: theme.primary }]}>
             <Ionicons name="flash" size={18} color="#fff" />
             <ThemedText type="smallBold" style={{ color: '#fff', fontSize: 18 }}>
-              {isPremium ? 'Sınırsız' : `${credits} kredi`}
+              {isPremium ? 'Günde 40 işlem' : `${credits} kredi`}
             </ThemedText>
           </View>
           <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 14, textAlign: 'center' }}>
@@ -48,7 +48,7 @@ export default function GetCreditsScreen() {
           <Card style={[styles.activeCard, { backgroundColor: theme.primarySoft }]}>
             <Ionicons name="star" size={22} color={theme.primaryDark} />
             <ThemedText type="smallBold" style={{ fontSize: 15, color: theme.primaryDark, flex: 1 }}>
-              Premium&apos;sun — AI sınırsız, krediye ihtiyacın yok 🎉
+              Premium&apos;sun — krediye ihtiyacın yok, günde 40 AI işlemi hakkın var 🎉
             </ThemedText>
           </Card>
         ) : (
@@ -58,7 +58,7 @@ export default function GetCreditsScreen() {
                 Kredin bitince ne olur?
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 13 }}>
-                AI özelliklerini sınırsız kullanmak için Premium&apos;a geçebilirsin. Premium ile
+                Kredi biriktirmek yerine Premium&apos;a geçebilirsin: günde 40 AI işlemiyle
                 kredi derdi olmadan tarif üret, koça sor, fotoğraf ve buzdolabı tara.
               </ThemedText>
             </Card>
@@ -71,10 +71,10 @@ export default function GetCreditsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <ThemedText type="smallBold" style={{ fontSize: 16, color: '#fff' }}>
-                    Sınırsız AI → Premium
+                    Günde 40 AI işlemi → Premium
                   </ThemedText>
                   <ThemedText type="small" style={{ fontSize: 12, color: '#fff', opacity: 0.9 }}>
-                    Krediyle uğraşma; tüm AI özelliklerini sınırsız kullan.
+                    Krediyle uğraşma; tüm AI özellikleri her gün açık.
                   </ThemedText>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#fff" />

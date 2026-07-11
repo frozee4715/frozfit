@@ -160,7 +160,10 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
 export const usePremium = () => useContext(PremiumContext);
 
 export const PREMIUM_FEATURES: { icon: string; title: string; desc: string }[] = [
-  { icon: 'sparkles-outline', title: 'Sınırsız AI', desc: 'AI tarif, koç ve fotoğraf analizinde sınır yok' },
+  // NOT: "sınırsız" demiyoruz — sunucuda adil kullanım tavanı var (günde 40 AI
+  // işlemi, bkz. cloudflare-worker RL_PER_DAY). Tavanı gizleyip "sınırsız" satmak
+  // yanıltıcı olur ve App Store Guideline 2.3.1'e takılır.
+  { icon: 'sparkles-outline', title: 'Günde 40 AI işlemi', desc: 'Kredi derdi yok: tarif, koç ve fotoğraf analizi hep açık' },
   { icon: 'calendar-outline', title: 'Haftalık AI öğün planı', desc: 'Sana özel 7 günlük plan oluştur' },
   { icon: 'stats-chart-outline', title: 'Gelişmiş analizler', desc: 'Detaylı trend ve makro içgörüleri' },
   { icon: 'color-palette-outline', title: 'Özel temalar', desc: 'Uygulamayı kişiselleştir' },

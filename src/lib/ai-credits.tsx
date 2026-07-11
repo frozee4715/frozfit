@@ -3,8 +3,13 @@
  *
  * Güvenlik:
  * - İstemci krediyi yalnızca AZALTABİLİR (Firestore kuralı artışı engeller).
- * - Krediyi artırmanın tek yolu Premium'a geçmek (Pro = sınırsız). Reklam yok.
- * - Pro kullanıcılar kredi harcamaz (isPremium=true → sınırsız).
+ * - Krediyi artırmanın tek yolu Premium'a geçmek. Reklam yok.
+ * - Pro kullanıcılar kredi harcamaz (isPremium=true → `unlimited`).
+ *
+ * DİKKAT: `unlimited` yalnızca "kredi harcanmaz" demektir, "sınır yok" DEĞİL.
+ * Sunucuda adil kullanım tavanı var (günde 40 AI işlemi, bkz. cloudflare-worker
+ * RL_PER_DAY) ve kullanıcıya da böyle anlatılır. Arayüzde Pro'yu "sınırsız" diye
+ * tanıtma: gizli tavanla çelişir ve App Store Guideline 2.3.1 riski doğurur.
  */
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';

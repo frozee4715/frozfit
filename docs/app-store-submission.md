@@ -62,7 +62,7 @@ TOPLULUK
 • Beğen, takip et, ilham al
 
 FROZFIT PRO
-• Sınırsız yapay zekâ kullanımı
+• Günde 40 yapay zekâ işlemi (adil kullanım) — kredi derdi yok
 • Haftalık AI yemek planı
 • Gelişmiş analizler ve özel temalar
 Pro, otomatik yenilenen bir aboneliktir. Dilediğin zaman iptal edebilirsin.
@@ -129,7 +129,7 @@ COMMUNITY
 • Like, follow and get inspired
 
 FROZFIT PRO
-• Unlimited AI usage
+• 40 AI actions per day (fair use) — no credits to manage
 • Weekly AI meal plan
 • Advanced insights and custom themes
 Pro is an auto-renewing subscription. Cancel anytime.
@@ -235,6 +235,13 @@ Bunlar App Store review'da **en sık ret sebepleri**:
 5. **Export Compliance.** ✓ Ana `app.json`'da `ITSAppUsesNonExemptEncryption: false` **zaten ayarlı** (standart HTTPS muaf). ASC'de ek soru çıkarsa "No" işaretle.
 
 6. **Boş/çalışmayan özellik yok.** Reviewer AI özelliklerini deneyecek — Cloudflare proxy canlı ve rate-limit'li ✓; ama reviewer çok deneyip 429 alırsa kafası karışabilir. Rate limit mesajları Türkçe/net ✓.
+
+   ℹ️ Supabase ve Pixabay anahtarları **hiç tanımlı değil**. Bu yüzden topluluk tarif fotoğrafı yükleme gizli, egzersizler videoya değil fotoğrafa düşüyor. Kod bu durumu zarifçe karşılıyor (kırık/boş ekran yok), dolayısıyla red sebebi değil — ama bu özellikleri istiyorsan ilgili ücretsiz hesapları açıp anahtarları EAS `production` ortamına eklemelisin.
+
+7. **"Sınırsız AI" iddiası (Guideline 2.3.1) — ✅ ÇÖZÜLDÜ (2026-07-11).**
+   Paywall, uygulama içi metinler ve bu dokümandaki mağaza açıklaması Pro'yu "sınırsız AI" diye tanıtıyordu; oysa sunucuda günlük tavan var. "Sınırsız" satıp gizli tavan koymak yanıltıcı tanıtımdır ve abonelik kurallarına takılır.
+   Yapılan: sunucu tavanı **günde 40 AI işlemi** olarak belirlendi (`cloudflare-worker` → `RL_PER_DAY`, ağırlıklı birim sayar: haftalık öğün planı 4 birim) ve **tüm metinler bu rakamı söylüyor** — paywall, kredi ekranı, profil, i18n (TR+EN) ve §2/§3'teki mağaza açıklamaları.
+   ⚠️ Tavanı değiştirirsen bu metinleri de güncelle; ikisi birbirine bağlı.
 
 ---
 

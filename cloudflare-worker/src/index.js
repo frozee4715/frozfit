@@ -45,10 +45,14 @@ const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
 //
 // Limit ÇAĞRI değil BİRİM sayar: bütün çağrılar aynı maliyette değil. Haftalık
 // öğün planı 4000 çıktı token'ı ister; bir tarif/fotoğraf çağrısının birkaç katı
-// tutar. Ağırlıklandırmazsak Pro bir kullanıcı günde 25 plan isteyip abonelik
+// tutar. Ağırlıklandırmazsak Pro bir kullanıcı günde onlarca plan isteyip abonelik
 // ücretinden fazla token yakabilir. Normal kullanıcı günde 3-5 birimde kalır.
+//
+// 40 birim = "adil kullanım" tavanı. Uygulama metinleri de bunu böyle anlatır
+// (bkz. PREMIUM_FEATURES); Pro'yu "sınırsız" diye satıp gizli tavan koymak hem
+// yanıltıcı hem App Store Guideline 2.3.1 riski.
 const RL_PER_MINUTE = 10;
-const RL_PER_DAY = 25;
+const RL_PER_DAY = 40;
 
 /** İsteğin kaç limit birimi yakacağı — çıktı bütçesi büyüdükçe pahalanır. */
 function requestCost(maxTokens) {
