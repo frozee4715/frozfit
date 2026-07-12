@@ -12,7 +12,7 @@ import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { consumeReturningToLogin } from '@/lib/auth-flow';
 import { PremiumProvider } from '@/lib/premium';
 import { SettingsProvider, useResolvedScheme } from '@/lib/settings';
-import { useUserProfile } from '@/lib/user-profile';
+import { isGuestExpired, useUserProfile } from '@/lib/user-profile';
 
 export default function RootLayout() {
   return (
@@ -54,7 +54,8 @@ function needsEmailVerification(user: { isAnonymous: boolean; emailVerified: boo
  * Oturum/onboarding durumuna göre yönlendiren "kapı" — ÖNCE kişiselleştirme akışı.
  * - Oturum yoksa (yeni kullanıcı) → sessiz misafir oturumu + /onboarding (önce kişiselleştirme)
  * - Oturum yoksa ama ÇIKIŞ yapıldıysa (dönen kullanıcı) → /login
- * - Onboarding bittiyse ama hâlâ misafirse → /login (hesap oluşturma ZORUNLU)
+ * - Misafir + onboarding bitti → ANA UYGULAMA ("Ücretsiz başla" sözü tutulur);
+ *   hesap yalnızca 7 günlük deneme dolunca zorunlu olur
  * - E-posta doğrulanmadıysa → /verify-email (sahte adres engeli)
  * - Her şey tamamsa → ana uygulama
  */
@@ -103,15 +104,21 @@ function RootNavigator() {
       if (!onVerify) router.replace('/verify-email' as Href);
       return;
     }
-    // Misafir (anonim) akışı: ÖNCE kişiselleştirme, sonra hesap oluşturma ZORUNLU.
+    // Misafir (anonim) akışı: önce kişiselleştirme, sonra uygulamaya SERBEST giriş.
     if (user.isAnonymous) {
       // Onboarding tamamlanmadıysa oraya götür.
       if (!profile?.onboardedAt) {
         if (!onOnboarding) router.replace('/onboarding');
         return;
       }
-      // Onboarding bitti ama hâlâ misafir → hesap oluşturma ZORUNLU.
-      if (!onLogin) router.replace({ pathname: '/login', params: { mode: 'signup' } } as Href);
+      // 7 günlük deneme dolduysa hesap oluşturma zorunlu.
+      if (isGuestExpired(profile)) {
+        if (!onLogin) router.replace({ pathname: '/login', params: { mode: 'signup' } } as Href);
+        return;
+      }
+      // Deneme sürüyor: misafir uygulamayı kullanır. /login'den ATMA —
+      // hesaba yükseltmek için kendi isteğiyle gitmiş olabilir.
+      if (onWelcome || onOnboarding || onVerify) router.replace('/' as Href);
       return;
     }
     // Gerçek hesap (Google/Apple/e-posta): onboarding YAPILMAMIŞ olsa bile
