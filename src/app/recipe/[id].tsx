@@ -37,13 +37,13 @@ export default function RecipeDetailScreen() {
   const { addMeal } = useDailyLog();
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const { requireAccount } = useAccountGate();
+  const { requireAccount, requireActiveTrial } = useAccountGate();
 
   // Hem standart hem topluluk tarifleri arasında ara.
   const recipe = recipes.find((r) => r.id === id) ?? communityRecipes.find((r) => r.id === id);
   const isFavorite = Boolean(id && profile?.favorites?.includes(id));
   const onToggleFavorite = () => {
-    if (!requireAccount()) return;
+    if (!requireActiveTrial()) return;
     if (user && id) toggleFavorite(user.uid, id, !isFavorite).catch(() => {});
   };
   const [mealType, setMealType] = useState<MealType>(defaultMealType());
@@ -71,6 +71,8 @@ export default function RecipeDetailScreen() {
 
   const sendReview = async () => {
     if (!user || !id || rating < 1 || sending) return;
+    // Yorum/puan kullanıcı içeriğidir — misafire kapalı (Guideline 1.2).
+    if (!requireAccount()) return;
     setSending(true);
     setReviewError(null);
     try {
@@ -109,7 +111,7 @@ export default function RecipeDetailScreen() {
   const PORTIONS = [0.5, 1, 1.5, 2];
 
   const handleAdd = () => {
-    if (!requireAccount()) return;
+    if (!requireActiveTrial()) return;
     addMeal({
       name: recipe.title,
       mealType,

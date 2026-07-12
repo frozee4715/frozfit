@@ -55,7 +55,7 @@ export default function FridgeScanScreen() {
   const { user } = useAuth();
   const { addMeal } = useDailyLog();
   const access = useAiAccess();
-  const { requireAccount } = useAccountGate();
+  const { requireActiveTrial } = useAccountGate();
 
   const [phase, setPhase] = useState<Phase>('capture');
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -84,7 +84,7 @@ export default function FridgeScanScreen() {
 
   const scan = async (from: 'camera' | 'library') => {
     setError(null);
-    if (!requireAccount()) return;
+    if (!requireActiveTrial()) return;
     // Kredi kapısı (Pro değilse ve kredi yoksa).
     if (!access.consume()) {
       router.push('/get-credits');

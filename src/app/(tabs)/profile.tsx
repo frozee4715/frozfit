@@ -105,7 +105,7 @@ export default function ProfileScreen() {
   });
 
   const isGuest = profile?.isGuest;
-  const { requireAccount } = useAccountGate();
+  const { requireActiveTrial } = useAccountGate();
 
   const saveWeight = async (kg: number) => {
     setWeightModal(false);
@@ -248,7 +248,7 @@ export default function ProfileScreen() {
           </ThemedText>
           <Pressable
             onPress={() => {
-              if (!requireAccount()) return;
+              if (!requireActiveTrial()) return;
               setWeightModal(true);
             }}
             style={[styles.weightAddBtn, { backgroundColor: theme.primarySoft }]}>

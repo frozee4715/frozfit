@@ -55,7 +55,7 @@ export default function TrackerScreen() {
   const { streak } = useTrackingHistory();
   const workout = useWorkoutLog();
   const access = useAiAccess();
-  const { requireAccount } = useAccountGate();
+  const { requireActiveTrial } = useAccountGate();
   const yesterday = useDailyLog(yesterdayKey());
 
   const [modalType, setModalType] = useState<MealType | null>(null);
@@ -64,7 +64,7 @@ export default function TrackerScreen() {
   // "Dünü kopyala": bugün boşsa ve dün öğün varsa göster.
   const canCopyYesterday = log.meals.length === 0 && yesterday.log.meals.length > 0;
   const copyYesterday = () => {
-    if (!requireAccount()) return;
+    if (!requireActiveTrial()) return;
     yesterday.log.meals.forEach(({ id, ...meal }) => addMeal(meal));
   };
 
@@ -128,7 +128,7 @@ export default function TrackerScreen() {
       {isAIEnabled() && (
         <Pressable
           onPress={() => {
-            if (!requireAccount()) return;
+            if (!requireActiveTrial()) return;
             if (!access.consume()) {
               router.push('/get-credits' as Href);
               return;
@@ -163,7 +163,7 @@ export default function TrackerScreen() {
               key={i}
               // Dolu son bardağa basınca onu boşalt (toggle), aksi halde o seviyeye doldur.
               onPress={() => {
-                if (!requireAccount()) return;
+                if (!requireActiveTrial()) return;
                 setWater(i + 1 === log.water ? i : i + 1);
               }}
               style={{ flex: 1 }}>
@@ -239,7 +239,7 @@ export default function TrackerScreen() {
                 </View>
                 <Pressable
                   onPress={() => {
-                    if (!requireAccount()) return;
+                    if (!requireActiveTrial()) return;
                     setModalType(section.value);
                   }}
                   style={[styles.addBtn, { backgroundColor: theme.primary }]}>

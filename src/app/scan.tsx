@@ -19,7 +19,7 @@ export default function ScanScreen() {
   const { meal } = useLocalSearchParams<{ meal?: string }>();
   const mealType = (meal as MealType) || 'snack';
   const { addMeal } = useDailyLog();
-  const { requireAccount } = useAccountGate();
+  const { requireActiveTrial } = useAccountGate();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(true);
@@ -62,7 +62,7 @@ export default function ScanScreen() {
 
   const add = () => {
     if (!product || !scaled) return;
-    if (!requireAccount()) return;
+    if (!requireActiveTrial()) return;
     addMeal({
       name: product.brand ? `${product.name} (${product.brand})` : product.name,
       mealType,

@@ -42,7 +42,7 @@ export default function WorkoutScreen() {
   const { latest } = useWeightLog();
   const { log, totals, addExercise, removeExercise } = useWorkoutLog();
   const { totals: foodTotals } = useDailyLog();
-  const { requireAccount } = useAccountGate();
+  const { requireActiveTrial } = useAccountGate();
 
   const [picker, setPicker] = useState(false);
 
@@ -124,7 +124,7 @@ export default function WorkoutScreen() {
         {/* Egzersiz ekle butonu */}
         <Pressable
           onPress={() => {
-            if (!requireAccount()) return;
+            if (!requireActiveTrial()) return;
             setPicker(true);
           }}
           style={[styles.addBtn, { backgroundColor: theme.primary }]}>

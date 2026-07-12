@@ -27,7 +27,7 @@ export default function PhotoMealScreen() {
   const { addMeal } = useDailyLog();
   const { profile } = useUserProfile();
   const access = useAiAccess();
-  const { requireAccount } = useAccountGate();
+  const { requireActiveTrial } = useAccountGate();
 
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,7 +67,7 @@ export default function PhotoMealScreen() {
 
   const pick = async (from: 'camera' | 'library') => {
     setError(null);
-    if (!requireAccount()) return;
+    if (!requireActiveTrial()) return;
     if (!access.consume()) {
       router.push('/get-credits' as Href);
       return;

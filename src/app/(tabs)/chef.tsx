@@ -195,7 +195,7 @@ function AiGenerator() {
   const { user } = useAuth();
   const { addMeal } = useDailyLog();
   const access = useAiAccess();
-  const { requireAccount } = useAccountGate();
+  const { requireActiveTrial } = useAccountGate();
 
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading'>('idle');
@@ -218,8 +218,8 @@ function AiGenerator() {
 
   const generate = async () => {
     if (!input.trim() || status === 'loading') return;
-    // Hesap kapısı: misafirse önce hesap oluşturmaya yönlendir.
-    if (!requireAccount()) return;
+    // Deneme kapısı: misafir 7 gün serbest; süresi dolduysa hesap oluşturmaya yönlendir.
+    if (!requireActiveTrial()) return;
     // Kredi kapısı: Pro değilse ve kredi yoksa kredi ekranına yönlendir.
     if (!access.consume()) {
       router.push('/get-credits' as Href);
