@@ -11,6 +11,7 @@ import { Screen } from '@/components/ui/screen';
 import { PRIVACY_URL, TERMS_URL } from '@/constants/links';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAccountGate } from '@/lib/account-gate';
 import { PREMIUM_FEATURES, usePremium } from '@/lib/premium';
 import type { PurchasePackage } from '@/lib/purchases';
 
@@ -57,6 +58,7 @@ export default function PremiumScreen() {
     purchase,
     restore,
   } = usePremium();
+  const { requireAccount } = useAccountGate();
   const [busy, setBusy] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -76,6 +78,9 @@ export default function PremiumScreen() {
 
   const handleSubscribe = async () => {
     if (!selected) return;
+    // Misafir aboneliği anonim hesaba bağlanır ve uygulama silinince kaybolabilir —
+    // satın almadan ÖNCE ücretsiz hesap şart.
+    if (!requireAccount('Premium aboneliğinin kaybolmaması için önce ücretsiz bir hesap oluştur. Aboneliğin hesabına bağlanır; uygulamayı silsen bile korunur.')) return;
     setBusy(true);
     try {
       const res = await purchase(selected);
@@ -92,6 +97,8 @@ export default function PremiumScreen() {
   };
 
   const handleRestore = async () => {
+    // Geri yükleme de hesaba bağlanır — misafire kapalı, önce giriş/hesap.
+    if (!requireAccount('Aboneliğini geri yüklemek için önce hesabına giriş yap veya ücretsiz bir hesap oluştur.')) return;
     setBusy(true);
     try {
       const res = await restore();
