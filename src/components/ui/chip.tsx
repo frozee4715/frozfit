@@ -40,11 +40,10 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  // Gölge YOK: yuvarlak köşe + kenarlık + gölge birlikteyken iOS'un border görseli
+  // yeniden çizimi Hermes GC ile yarışıp çökmeye yol açıyor (bkz. tab-bar.tsx).
+  // Seçim zaten dolu arka plan rengiyle net biçimde belli oluyor.
   chipSelected: {
-    shadowColor: '#12B886',
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
 });

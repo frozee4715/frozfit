@@ -34,7 +34,6 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
           styles.bar,
           {
             backgroundColor: theme.card,
-            borderColor: theme.border,
             shadowColor: '#000',
           },
         ]}>
@@ -98,6 +97,10 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
+  // Kenarlık YOK: yuvarlak köşe + hairline kenarlık + gölge birlikteyken iOS
+  // her traitCollectionDidChange'de (sekme geçişi, boyut değişimi) border görselini
+  // yeniden çiziyor ve bu çizim JS thread'indeki Hermes GC ile yarışıp çökmeye
+  // yol açıyordu. Gölge zaten çubuğu zeminden ayırıyor.
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -105,7 +108,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
     shadowOpacity: 0.18,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },

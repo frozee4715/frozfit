@@ -147,7 +147,12 @@ export const Radius = {
   md: 16,
   lg: 22,
   xl: 28,
-  pill: 999,
+  // 999 DEĞİL: iOS'ta borderRadius, borderWidth ile birleşince RCTGetCornerInsets
+  // (radius - borderWidth) hesabı devasa bir yarıçap üretiyor; RCTPathAddEllipticArc
+  // bunu CGPathAddArc'a geçirince yol geometrisi bozuluyor ve Hermes heap'i
+  // bozuluyordu (App Store 2.1a crash, iPad). 100 her UI elemanından büyük olduğu
+  // için görsel sonuç yine tam yuvarlak ("pill") ama taşma üretmiyor.
+  pill: 100,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
