@@ -41,6 +41,13 @@ yarn-error.*
 # Firebase admin hizmet hesabı anahtarı (GİZLİ — asla commit etme)
 **/serviceAccountKey.json
 
+# Google Play hizmet hesabı anahtarı (GİZLİ — mağazaya yükleme yetkisi verir)
+play-service-account.json
+**/play-service-account.json
+
+# Firebase Android yapılandırması (proje kimlikleri — repo public ise commit etme)
+google-services.json
+
 # typescript
 *.tsbuildinfo
 

@@ -61,6 +61,23 @@ const tr: Dict = {
   'profile.help': 'Yardım & Destek',
   'profile.editProfile': 'Profili düzenle',
   'profile.logout': 'Çıkış yap',
+  'profile.deleteAccount': 'Hesabı sil',
+  'profile.deleteAccount.title': 'Hesabını silmek istiyor musun?',
+  'profile.deleteAccount.message':
+    'Hesabın ve tüm verilerin (öğünler, antrenmanlar, kilo geçmişi, tarifler) kalıcı olarak silinir. Bu işlem geri alınamaz.\n\nAktif bir Pro aboneliğin varsa, hesabını silmek aboneliği iptal etmez; aboneliği mağaza ayarlarından ayrıca iptal etmelisin.',
+  'profile.deleteAccount.confirm': 'Kalıcı olarak sil',
+  'profile.deleteAccount.cancel': 'Vazgeç',
+  'profile.deleteAccount.passwordTitle': 'Şifreni doğrula',
+  'profile.deleteAccount.passwordMessage':
+    'Güvenlik için hesabını silmeden önce şifreni gir.',
+  'profile.deleteAccount.passwordPlaceholder': 'Şifren',
+  'profile.deleteAccount.deleting': 'Hesabın siliniyor…',
+  'profile.deleteAccount.errorTitle': 'Silinemedi',
+  'profile.deleteAccount.errorWrongPassword': 'Şifre hatalı. Tekrar dene.',
+  'profile.deleteAccount.errorRecent':
+    'Güvenlik nedeniyle bu işlem için yeniden giriş yapman gerekiyor. Çıkış yapıp tekrar giriş yaptıktan sonra dene.',
+  'profile.deleteAccount.errorGeneric':
+    'Hesap silinirken bir sorun oluştu. Lütfen tekrar dene.',
   'profile.section.plan': 'Hedef & Plan',
   'profile.section.progress': 'İlerleme & Başarılar',
   'profile.section.recipes': 'Tarifler',
@@ -121,6 +138,23 @@ const en: Dict = {
   'profile.help': 'Help & Support',
   'profile.editProfile': 'Edit profile',
   'profile.logout': 'Log out',
+  'profile.deleteAccount': 'Delete account',
+  'profile.deleteAccount.title': 'Delete your account?',
+  'profile.deleteAccount.message':
+    'Your account and all your data (meals, workouts, weight history, recipes) will be permanently deleted. This cannot be undone.\n\nIf you have an active Pro subscription, deleting your account does not cancel it — cancel separately in your store settings.',
+  'profile.deleteAccount.confirm': 'Delete permanently',
+  'profile.deleteAccount.cancel': 'Cancel',
+  'profile.deleteAccount.passwordTitle': 'Confirm your password',
+  'profile.deleteAccount.passwordMessage':
+    'For your security, enter your password before deleting your account.',
+  'profile.deleteAccount.passwordPlaceholder': 'Your password',
+  'profile.deleteAccount.deleting': 'Deleting your account…',
+  'profile.deleteAccount.errorTitle': "Couldn't delete",
+  'profile.deleteAccount.errorWrongPassword': 'Incorrect password. Please try again.',
+  'profile.deleteAccount.errorRecent':
+    'For security, you need to sign in again before doing this. Log out, sign back in, and retry.',
+  'profile.deleteAccount.errorGeneric':
+    'Something went wrong while deleting your account. Please try again.',
   'profile.section.plan': 'Goal & Plan',
   'profile.section.progress': 'Progress & Achievements',
   'profile.section.recipes': 'Recipes',

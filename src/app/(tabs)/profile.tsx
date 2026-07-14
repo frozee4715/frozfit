@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { type Href, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
@@ -20,6 +20,9 @@ import { type WeightUnit, fromDisplayWeight, toDisplayWeight, useSettings, weigh
 import { useUserProfile } from '@/lib/user-profile';
 import { useAccountGate } from '@/lib/account-gate';
 import { logWeight, useWeightLog } from '@/lib/weight-log';
+
+/** Yıkıcı işlem rengi. Temada yok — yalnızca hesap silme akışında kullanılıyor. */
+const DANGER = '#DC2626';
 
 type SettingItem = { icon: any; labelKey: string; route?: Href };
 
@@ -67,13 +70,18 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { profile } = useUserProfile();
-  const { signOut, user } = useAuth();
+  const { signOut, user, deleteAccount } = useAuth();
   const { entries, latest } = useWeightLog();
   const { weightUnit } = useSettings();
   const { isPremium } = usePremium();
   const t = useT();
   const [weightModal, setWeightModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
   const wl = weightLabel(weightUnit);
+
+  // Şifre yalnızca e-posta/şifre ile kayıtlı hesaplarda sorulur; Google/Apple
+  // ile girenlerde Firebase yeniden doğrulama istemez.
+  const needsPassword = !!user?.providerData?.some((p) => p.providerId === 'password');
 
   // Gerçek profil yoksa (Firebase kapalı) mock'a düş.
   const name = profile?.name || userProfile.name;
@@ -354,9 +362,34 @@ export default function ProfileScreen() {
         </Pressable>
       )}
 
+      {/* Hesap silme — App Store ve Google Play, hesap açan uygulamalarda
+          uygulama içi silme yolu ZORUNLU kılar. */}
+      {user && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.deleteAccount')}
+          onPress={() => setDeleteModal(true)}
+          style={styles.deleteBtn}>
+          <ThemedText type="small" style={{ color: DANGER, fontSize: 14 }}>
+            {t('profile.deleteAccount')}
+          </ThemedText>
+        </Pressable>
+      )}
+
       <ThemedText type="small" themeColor="textMuted" style={{ textAlign: 'center', fontSize: 12 }}>
         FrozFit · v0.1.0
       </ThemedText>
+
+      <DeleteAccountModal
+        visible={deleteModal}
+        needsPassword={needsPassword}
+        onClose={() => setDeleteModal(false)}
+        onDelete={async (password) => {
+          await deleteAccount(password);
+          setDeleteModal(false);
+          flagReturningToLogin();
+        }}
+      />
 
       <WeightModal
         visible={weightModal}
@@ -370,6 +403,121 @@ export default function ProfileScreen() {
 }
 
 /** Bugünün kilosunu girmek için basit modal. Giriş seçili birimde; kayıt kg olarak yapılır. */
+/**
+ * Hesap silme onay sayfası. Apple ve Google, hesap açan uygulamalarda uygulama
+ * içi silme yolunu zorunlu kılar.
+ *
+ * E-posta/şifre ile kayıtlı hesaplarda Firebase yeniden doğrulama ister; bu yüzden
+ * `needsPassword` ise şifre alanı gösterilir. Google/Apple ile girenlerde gerekmez.
+ */
+function DeleteAccountModal({
+  visible,
+  needsPassword,
+  onClose,
+  onDelete,
+}: {
+  visible: boolean;
+  needsPassword: boolean;
+  onClose: () => void;
+  onDelete: (password?: string) => Promise<void>;
+}) {
+  const theme = useTheme();
+  const t = useT();
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  // Her açılışta temizle — şifre modalda takılı kalmasın.
+  useEffect(() => {
+    if (visible) {
+      setPassword('');
+      setBusy(false);
+    }
+  }, [visible]);
+
+  const canSubmit = !busy && (!needsPassword || password.length > 0);
+
+  const submit = async () => {
+    if (!canSubmit) return;
+    setBusy(true);
+    try {
+      await onDelete(needsPassword ? password : undefined);
+      // Başarılıysa Firebase oturumu kapanır; ekran otomatik login'e döner.
+    } catch (e: any) {
+      setBusy(false);
+      const code: string = e?.code ?? '';
+      const message =
+        code === 'auth/wrong-password' || code === 'auth/invalid-credential'
+          ? t('profile.deleteAccount.errorWrongPassword')
+          : code === 'auth/requires-recent-login'
+            ? t('profile.deleteAccount.errorRecent')
+            : t('profile.deleteAccount.errorGeneric');
+      Alert.alert(t('profile.deleteAccount.errorTitle'), message);
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={busy ? undefined : onClose}>
+        <Pressable style={[styles.weightSheet, { backgroundColor: theme.card }]} onPress={() => {}}>
+          <ThemedText type="subtitle" style={{ fontSize: 18, color: DANGER }}>
+            {t('profile.deleteAccount.title')}
+          </ThemedText>
+
+          <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 14, lineHeight: 20 }}>
+            {t('profile.deleteAccount.message')}
+          </ThemedText>
+
+          {needsPassword && (
+            <View style={[styles.weightInput, { backgroundColor: theme.backgroundElement }]}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder={t('profile.deleteAccount.passwordPlaceholder')}
+                placeholderTextColor={theme.textMuted}
+                secureTextEntry
+                autoCapitalize="none"
+                editable={!busy}
+                accessibilityLabel={t('profile.deleteAccount.passwordPlaceholder')}
+                style={{ flex: 1, fontSize: 16, color: theme.text, paddingVertical: 12 }}
+              />
+            </View>
+          )}
+
+          {busy ? (
+            <View style={{ alignItems: 'center', paddingVertical: 12, gap: 8 }}>
+              <ActivityIndicator color={DANGER} />
+              <ThemedText type="small" themeColor="textMuted" style={{ fontSize: 13 }}>
+                {t('profile.deleteAccount.deleting')}
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={{ gap: 10 }}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={submit}
+                disabled={!canSubmit}
+                style={[styles.deleteConfirmBtn, { opacity: canSubmit ? 1 : 0.5 }]}>
+                <ThemedText type="smallBold" style={{ color: '#FFFFFF', fontSize: 15 }}>
+                  {t('profile.deleteAccount.confirm')}
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={onClose}
+                style={[styles.deleteCancelBtn, { borderColor: theme.border }]}>
+                <ThemedText type="smallBold" style={{ color: theme.text, fontSize: 15 }}>
+                  {t('profile.deleteAccount.cancel')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 function WeightModal({
   visible,
   initial,
@@ -607,6 +755,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
+    height: 50,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  // Silme bağlantısı bilerek sade: yıkıcı işlem, çıkış kadar göze çarpmamalı.
+  deleteBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+  },
+  deleteConfirmBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 50,
+    borderRadius: Radius.md,
+    backgroundColor: DANGER,
+  },
+  deleteCancelBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
     height: 50,
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
