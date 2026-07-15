@@ -43,17 +43,34 @@ export type UserProfile = PlanInput &
 const USERS = 'users';
 
 function toProfile(data: Record<string, any>): UserProfile {
+  const gender = data.gender ?? 'male';
+  const age = Number(data.age ?? 0);
+  const height = Number(data.height ?? 0);
+  const weight = Number(data.weight ?? 0);
+  const targetWeight = Number(data.targetWeight ?? 0);
+  const goal = data.goal ?? 'maintain';
+  const activity = data.activity ?? 'moderate';
+
+  // KRİTİK: `plan` alanı Firestore'da yoksa (ör. onboarding'i atlamış bir hesap
+  // ya da Admin SDK betiğiyle yarım oluşturulmuş inceleme hesabı) BURADA hesapla.
+  // Aksi halde `profile.plan.calorieGoal` gibi erişimler `undefined` üzerinde
+  // patlar ve sekmeye basınca uygulama ÇÖKER (App Store 2.1a crash sebebi).
+  const plan: NutritionPlan =
+    data.plan && typeof data.plan.calorieGoal === 'number'
+      ? (data.plan as NutritionPlan)
+      : computePlan({ gender, age, height, weight, targetWeight, goal, activity });
+
   return {
     name: String(data.name ?? ''),
     photoUri: data.photoUri ?? null,
-    gender: data.gender ?? 'male',
-    age: Number(data.age ?? 0),
-    height: Number(data.height ?? 0),
-    weight: Number(data.weight ?? 0),
-    targetWeight: Number(data.targetWeight ?? 0),
-    goal: data.goal ?? 'maintain',
-    activity: data.activity ?? 'moderate',
-    plan: data.plan as NutritionPlan,
+    gender,
+    age,
+    height,
+    weight,
+    targetWeight,
+    goal,
+    activity,
+    plan,
     diet: data.diet ?? DEFAULT_PREFERENCES.diet,
     allergies: Array.isArray(data.allergies) ? data.allergies : DEFAULT_PREFERENCES.allergies,
     mealsPerDay: Number(data.mealsPerDay ?? DEFAULT_PREFERENCES.mealsPerDay),

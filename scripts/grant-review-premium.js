@@ -47,14 +47,46 @@ initializeApp({ credential: cert(serviceAccount) });
 const auth = getAuth();
 const db = getFirestore();
 
+// İnceleme hesabı onboarding'i atladığı için Firestore'da plan/tercih alanları
+// olmayabilir. Bunlar olmadan tab ekranları (Profil, Takip, Şef...) çöker
+// (profile.plan.calorieGoal undefined). Bu yüzden tam ve tutarlı bir profil yazıyoruz.
+// Değerler makul bir örnek kullanıcıdır; App Store incelemecisi dolu bir ekran görür.
+const REVIEW_PROFILE = {
+  name: 'App Review',
+  gender: 'male',
+  age: 30,
+  height: 178,
+  weight: 78,
+  targetWeight: 74,
+  goal: 'lose',
+  activity: 'moderate',
+  diet: 'omnivore',
+  allergies: [],
+  mealsPerDay: 3,
+  cookingTime: 'medium',
+  dislikes: [],
+  // computePlan(gender=male,age=30,h=178,w=78,goal=lose,activity=moderate) çıktısıyla uyumlu.
+  plan: {
+    calorieGoal: 2209,
+    protein: 140,
+    carbs: 275,
+    fat: 61,
+    waterGoal: 11,
+    bmi: 24.6,
+  },
+  onboardedAt: Date.now(),
+};
+
 async function main() {
   const user = await auth.getUserByEmail(EMAIL);
 
-  // merge:true → onboarding'den gelen profil alanlarını (boy, kilo, hedef) ezme.
+  // merge:true → yalnızca eksik alanları tamamlar. Zaten onboarding yapılmışsa
+  // gerçek değerleri korumak istersen bu betiği çalıştırmadan önce hesabı sıfırlama.
   await db.doc(`users/${user.uid}`).set(
     {
       isPremium: true,
       aiCredits: 500, // isPremium zaten krediyi baypas eder; bu yalnızca emniyet payı
+      ...REVIEW_PROFILE,
     },
     { merge: true },
   );
