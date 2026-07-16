@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   // Gölge YOK: yuvarlak köşe + kenarlık + gölge birlikteyken iOS'un border görseli
   // yeniden çizimi Hermes GC ile yarışıp çökmeye yol açıyor (bkz. tab-bar.tsx).

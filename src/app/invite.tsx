@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     paddingHorizontal: Spacing.three,
     fontSize: 18,
     letterSpacing: 2,

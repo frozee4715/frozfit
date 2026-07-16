@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   goalBtn: {
     flex: 1,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   saveBtn: {
     height: 54,

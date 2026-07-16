@@ -149,7 +149,7 @@ export default function PhotoMealScreen() {
           </Pressable>
           <Pressable
             onPress={() => pick('library')}
-            style={[styles.pickBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+            style={[styles.pickBtn, { borderColor: theme.border, borderWidth: 1 }]}>
             <Ionicons name="images-outline" size={18} color={theme.text} />
             <ThemedText type="smallBold" style={{ fontSize: 14 }}>
               Galeriden
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   pos: { position: 'absolute' },
   posTop: { top: 22, left: 0, right: 0, alignItems: 'center' },
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   addBtn: {
     flexDirection: 'row',

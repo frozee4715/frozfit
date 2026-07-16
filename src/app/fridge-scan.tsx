@@ -247,7 +247,7 @@ export default function FridgeScanScreen() {
                 </Pressable>
                 <Pressable
                   onPress={() => scan('library')}
-                  style={[s.pickBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+                  style={[s.pickBtn, { borderColor: theme.border, borderWidth: 1 }]}>
                   <Ionicons name="images-outline" size={18} color={theme.text} />
                   <ThemedText type="smallBold" style={{ fontSize: 14 }}>
                     Galeriden
@@ -425,7 +425,7 @@ export default function FridgeScanScreen() {
                   <Pressable
                     onPress={share}
                     disabled={shared || !user}
-                    style={[s.resultBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth, flex: 1 }]}>
+                    style={[s.resultBtn, { borderColor: theme.border, borderWidth: 1, flex: 1 }]}>
                     <Ionicons name={shared ? 'checkmark' : 'share-social-outline'} size={16} color={theme.text} />
                     <ThemedText type="smallBold" style={{ fontSize: 14 }}>
                       {shared ? 'Paylaşıldı' : 'Paylaş'}
@@ -555,6 +555,6 @@ const s = StyleSheet.create({
     gap: Spacing.two,
     height: 46,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
 });

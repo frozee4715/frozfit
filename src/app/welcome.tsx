@@ -218,7 +218,7 @@ export default function WelcomeScreen() {
           <PressableScale
             onPress={() => social('google')}
             disabled={anyBusy}
-            style={[styles.socialBtn, { backgroundColor: theme.card, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.border }]}>
+            style={[styles.socialBtn, { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border }]}>
             {busy === 'google' ? (
               <ActivityIndicator color={theme.text} />
             ) : (
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     shadowColor: '#0F1B15',
     shadowOpacity: 0.1,
     shadowRadius: 12,

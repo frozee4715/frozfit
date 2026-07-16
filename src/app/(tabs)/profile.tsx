@@ -571,7 +571,7 @@ function WeightModal({
             </ThemedText>
           </View>
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <Pressable onPress={onClose} style={[styles.weightBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+            <Pressable onPress={onClose} style={[styles.weightBtn, { borderColor: theme.border, borderWidth: 1 }]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Vazgeç
               </ThemedText>
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     marginTop: Spacing.one,
   },
   guestCard: {
@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     height: 50,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   // Silme bağlantısı bilerek sade: yıkıcı işlem, çıkış kadar göze çarpmamalı.
   deleteBtn: {
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 50,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   weightAddBtn: {
     flexDirection: 'row',

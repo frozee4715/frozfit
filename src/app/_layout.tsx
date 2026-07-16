@@ -121,9 +121,14 @@ function RootNavigator() {
       if (onWelcome || onOnboarding || onVerify) router.replace('/' as Href);
       return;
     }
-    // Gerçek hesap (Google/Apple/e-posta): onboarding YAPILMAMIŞ olsa bile
-    // doğrudan uygulamaya girer — sıfır sürtünme. Eksik profil app içinde
-    // "planını tamamla" kartıyla toplanır (bkz. Keşfet ekranı).
+    // Gerçek hesap (Google/Apple/e-posta): onboarding YAPILMAMIŞSA önce oraya
+    // götür. Aksi halde boy/kilo/hedef alınmadan uygulamaya girilir; plan/kalori
+    // hesaplanamaz ve profile bağlı ekranlar boş/hatalı görünür. İlk girişte
+    // bir kez onboarding, sonra serbest kullanım.
+    if (!profile?.onboardedAt) {
+      if (!onOnboarding) router.replace('/onboarding');
+      return;
+    }
     // Her şey tamam: auth/onboarding ekranındaysa ana uygulamaya gönder.
     // Not: typedRoutes bu projede '/' köküne tip üretmiyor; çalışma zamanı doğru.
     if (onLogin || onWelcome || onVerify || onOnboarding) router.replace('/' as Href);

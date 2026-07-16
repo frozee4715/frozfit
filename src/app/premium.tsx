@@ -248,7 +248,7 @@ export default function PremiumScreen() {
                       {
                         backgroundColor: theme.card,
                         borderColor: isSelected ? theme.primary : theme.border,
-                        borderWidth: isSelected ? 2 : StyleSheet.hairlineWidth,
+                        borderWidth: isSelected ? 2 : 1,
                       },
                     ]}>
                     <View style={{ flex: 1, gap: 2 }}>

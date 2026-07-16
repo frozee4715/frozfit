@@ -121,7 +121,7 @@ export default function CoachScreen() {
                 styles.bubble,
                 m.role === 'user'
                   ? { alignSelf: 'flex-end', backgroundColor: theme.primary }
-                  : { alignSelf: 'flex-start', backgroundColor: theme.card, borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth },
+                  : { alignSelf: 'flex-start', backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
               ]}>
               <ThemedText
                 type="small"
@@ -132,7 +132,7 @@ export default function CoachScreen() {
           ))}
 
           {busy && (
-            <View style={[styles.bubble, { alignSelf: 'flex-start', backgroundColor: theme.card, borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+            <View style={[styles.bubble, { alignSelf: 'flex-start', backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}>
               <ActivityIndicator color={theme.primary} />
             </View>
           )}
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   inputBar: {
     flexDirection: 'row',

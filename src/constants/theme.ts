@@ -155,5 +155,14 @@ export const Radius = {
   pill: 100,
 } as const;
 
+/**
+ * Kenarlık kalınlığı. `StyleSheet.hairlineWidth` KULLANMA (kesirli ~0.33px):
+ * borderRadius ile birleşince iOS'un köşe geometrisi (RCTPathAddEllipticArc →
+ * CGPathAddArc) bozuk CGPath üretiyor ve Hermes heap'ini bozup uygulamayı
+ * çökertiyor (native SIGSEGV, iPad, buton/ekran geçişinde). Tam sayı 1 bu alt-piksel
+ * köşe-inset matematiğini tetiklemez. borderRadius'lu tüm dolu kenarlıklarda bunu kullan.
+ */
+export const Hairline = 1;
+
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;

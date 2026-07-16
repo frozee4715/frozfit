@@ -343,7 +343,7 @@ function ExercisePickerModal({
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
             <Pressable
               onPress={handleClose}
-              style={[styles.modalBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+              style={[styles.modalBtn, { borderColor: theme.border, borderWidth: 1 }]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Vazgeç
               </ThemedText>

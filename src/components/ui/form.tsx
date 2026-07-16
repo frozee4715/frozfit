@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   optionRow: {
     flexDirection: 'row',
@@ -244,6 +244,6 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
 });

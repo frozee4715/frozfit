@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
   },
   reviewInput: {
     borderRadius: Radius.sm,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     minHeight: 56,
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   footer: {
     position: 'absolute',

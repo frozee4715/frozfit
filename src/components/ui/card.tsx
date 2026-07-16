@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { StyleSheet, View, ViewProps } from 'react-native';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { Hairline, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type CardProps = ViewProps & {
@@ -32,7 +32,7 @@ export function Card({ children, padded = true, style, ...rest }: CardProps) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: Hairline,
     shadowColor: '#0F1B15',
     shadowOpacity: 0.06,
     shadowRadius: 12,

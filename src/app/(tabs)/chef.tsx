@@ -401,7 +401,7 @@ function AiGenerator() {
             <Pressable
               onPress={share}
               disabled={shared || !user}
-              style={[styles.resultBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth, flex: 1 }]}>
+              style={[styles.resultBtn, { borderColor: theme.border, borderWidth: 1, flex: 1 }]}>
               <Ionicons name={shared ? 'checkmark' : 'share-social-outline'} size={16} color={theme.text} />
               <ThemedText type="smallBold" style={{ fontSize: 14 }}>
                 {shared ? 'Paylaşıldı' : 'Paylaş'}
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     overflow: 'hidden',
     paddingBottom: Spacing.four,
     gap: Spacing.three,
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   quickIcon: {
     width: 42,
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   },
   aiBox: {
     borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.three,
   },

@@ -147,7 +147,7 @@ export default function ShareRecipeScreen() {
               </Pressable>
               <Pressable
                 onPress={() => pickPhoto('library')}
-                style={[styles.photoBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+                style={[styles.photoBtn, { borderColor: theme.border, borderWidth: 1 }]}>
                 <Ionicons name="images-outline" size={18} color={theme.text} />
                 <ThemedText type="smallBold" style={{ fontSize: 14 }}>
                   Galeriden

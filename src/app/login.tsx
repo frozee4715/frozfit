@@ -253,7 +253,7 @@ export default function LoginScreen() {
                 <PressableScale
                   onPress={() => socialSignIn('google')}
                   disabled={busy}
-                  style={[styles.socialBtn, { backgroundColor: theme.card, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.border }]}>
+                  style={[styles.socialBtn, { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border }]}>
                   <Ionicons name="logo-google" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={{ fontSize: 16 }}>
                     Google ile devam et
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   brandBadge: {
     width: 60,

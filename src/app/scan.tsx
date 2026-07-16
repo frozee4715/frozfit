@@ -190,7 +190,7 @@ export default function ScanScreen() {
           </View>
 
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <Pressable onPress={rescan} style={[styles.btn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+            <Pressable onPress={rescan} style={[styles.btn, { borderColor: theme.border, borderWidth: 1 }]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Tekrar tara
               </ThemedText>

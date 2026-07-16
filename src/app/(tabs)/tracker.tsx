@@ -553,7 +553,7 @@ function AddMealModal({
           </ScrollView>
 
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <Pressable onPress={handleClose} style={[styles.modalBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+            <Pressable onPress={handleClose} style={[styles.modalBtn, { borderColor: theme.border, borderWidth: 1 }]}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Vazgeç
               </ThemedText>
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
   waterGlass: {
     height: 40,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   workoutRow: {
     flexDirection: 'row',

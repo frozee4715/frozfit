@@ -484,7 +484,7 @@ export default function OnboardingScreen() {
           {step > 0 && (
             <Pressable
               onPress={goBack}
-              style={[styles.navBtn, { borderColor: theme.border, borderWidth: StyleSheet.hairlineWidth }]}>
+              style={[styles.navBtn, { borderColor: theme.border, borderWidth: 1 }]}>
               <ThemedText type="smallBold" themeColor="textSecondary" style={{ fontSize: 16 }}>
                 Geri
               </ThemedText>
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   goalBtn: {
     flex: 1,
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     paddingVertical: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   activityRow: {
     flexDirection: 'row',
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   statsRow: {
     flexDirection: 'row',

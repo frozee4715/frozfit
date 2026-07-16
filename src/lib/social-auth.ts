@@ -105,6 +105,15 @@ export async function getGoogleIdToken(): Promise<string | null> {
   } catch {
     // iOS'ta yok — yoksay
   }
+  // Native SDK son giren hesabı cihazda ÖNBELLEKTE tutar; signIn() önbellekteki
+  // hesabı hesap seçici GÖSTERMEDEN döndürebilir. Bu, aynı cihazda ikinci bir
+  // kişinin yanlışlıkla önceki kullanıcının hesabına girmesine yol açar. Önce
+  // signOut ile önbelleği temizleyip hesap seçicinin HER ZAMAN açılmasını garanti et.
+  try {
+    await GoogleSignin.signOut();
+  } catch {
+    // önbellek yoksa sorun değil
+  }
   try {
     const result = await GoogleSignin.signIn();
     // API sürümüne göre idToken farklı yerlerde olabilir.
@@ -115,5 +124,18 @@ export async function getGoogleIdToken(): Promise<string | null> {
       e?.code === 'SIGN_IN_CANCELLED' || e?.code === '-5' || e?.code === 12501 || e?.code === 'cancelled';
     if (cancelled) return null;
     throw e;
+  }
+}
+
+/**
+ * Google native oturumunu cihazdan temizler. Uygulama çıkışında çağrılır ki
+ * bir sonraki kullanıcı önceki hesabın önbelleğine düşmesin. Modül yoksa sessiz geçer.
+ */
+export async function signOutGoogle(): Promise<void> {
+  if (!GoogleSignin) return;
+  try {
+    await GoogleSignin.signOut();
+  } catch {
+    // oturum yoksa sorun değil
   }
 }

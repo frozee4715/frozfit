@@ -30,7 +30,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 import { deleteAllUserData } from '@/lib/delete-user-data';
 import { auth, isFirebaseConfigured } from '@/lib/firebase';
-import { getAppleCredential, getGoogleIdToken } from '@/lib/social-auth';
+import { getAppleCredential, getGoogleIdToken, signOutGoogle } from '@/lib/social-auth';
 
 type AuthContextValue = {
   user: User | null;
@@ -145,6 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signOut: async () => {
         if (!auth) return;
+        // Google native oturumunu da temizle: yoksa aynı cihazda bir sonraki
+        // kullanıcı önceki hesabın önbelleğine girer (yanlış hesap hatası).
+        await signOutGoogle();
         await fbSignOut(auth);
       },
       resetPassword: async (email) => {

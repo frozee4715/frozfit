@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   unblockBtn: {
     paddingHorizontal: Spacing.three,

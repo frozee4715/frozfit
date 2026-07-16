@@ -105,7 +105,7 @@ export default function SettingsScreen() {
                     {
                       backgroundColor: theme.card,
                       borderColor: selected ? a.swatch : theme.border,
-                      borderWidth: selected ? 2 : StyleSheet.hairlineWidth,
+                      borderWidth: selected ? 2 : 1,
                     },
                   ]}>
                   <View style={[styles.accentDot, { backgroundColor: a.swatch }]}>
